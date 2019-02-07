@@ -1,5 +1,5 @@
 {
-  "name": "@magicscript/polyfills",
+  "name": "magic-script-polyfills",
   "version": "0.1.0",
   "description": "Polyfills to give browser and/or node apis in magicscript",
   "module": "dist/polyfills.js",
