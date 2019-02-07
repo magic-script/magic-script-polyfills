@@ -22,3 +22,6 @@ globalThis.fetch = fetch;
 globalThis.Headers = Headers;
 globalThis.Request = Request;
 globalThis.Response = Response;
+
+// This helps with libraries like underscore that don't know about globalThis yet.
+globalThis.window = globalThis;
