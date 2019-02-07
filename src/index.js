@@ -6,5 +6,5 @@ export {
   clearInterval,
   setImmediate,
   clearImmediate
-} from './timers';
+} from './timers.js';
 export { fetch, Headers, Request, Response } from './fetch.js';

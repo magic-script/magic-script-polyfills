@@ -1,5 +1,5 @@
 /* global setTimeout, clearTimeout, setInterval, clearInterval, setImmediate, clearImmediate, fetch, Headers, Request, Response */
-import '../dist/polyfills.js';
+import '../src/polyfills.js';
 
 print('Start');
 setTimeout(()=>{
