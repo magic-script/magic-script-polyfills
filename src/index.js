@@ -1,0 +1,10 @@
+// Re-export all polyfilled web builtins
+export {
+  setTimeout,
+  clearTimeout,
+  setInterval,
+  clearInterval,
+  setImmediate,
+  clearImmediate
+} from './timers';
+export { fetch, Headers, Request, Response } from './fetch.js';

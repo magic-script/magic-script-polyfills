@@ -1,0 +1,26 @@
+{
+  "name": "@magicscript/polyfills",
+  "version": "0.1.0",
+  "description": "Polyfills to give browser and/or node apis in magicscript",
+  "module": "dist/polyfills.js",
+  "dependencies": {
+  },
+  "devDependencies": {},
+  "scripts": {
+    "build": "rollup -c",
+    "lint": "eslint src --fix"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/magic-script/magic-script-polyfills.git"
+  },
+  "keywords": [
+    "MagicScript"
+  ],
+  "author": "Tim Caswell",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/magic-script/magic-script-polyfills/issues"
+  },
+  "homepage": "https://github.com/magic-script/magic-script-polyfills#readme"
+}
