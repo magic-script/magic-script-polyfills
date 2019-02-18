@@ -2,14 +2,17 @@
 import { Fs, fs } from 'uv';
 import { guess } from './weblit-js/libs/mime.js';
 import { connect } from './tcp.js';
+import { socketWrap } from './socket-wrap.js';
+import { tlsWrap } from './tls-wrap.js';
+import { codecWrap } from './codec-wrap.js';
 import { decoder, encoder } from './weblit-js/libs/http-codec.js';
-import { wrapStream } from './weblit-js/libs/gen-channel.js';
 import { Headers } from './headers.js';
 export { Headers };
 
 export let fetch = makeFetch({
   file: fileRequest,
-  http: httpRequest
+  http: httpRequest,
+  https: httpRequest,
 });
 
 function makeFetch(protocols) {
@@ -24,7 +27,7 @@ function makeFetch(protocols) {
     let protocol = req.meta.protocol;
     let handler = protocols[protocol];
     if (handler) return handler(req);
-    if (protocol === 'https') throw new Error('TODO: Implement TLS for HTTPS clients');
+    throw new Error(`Unknown protocol: ${protocol}`);
   };
 }
 
@@ -191,9 +194,12 @@ function findCaller(_, stack) {
  * @returns {Response}
  */
 async function httpRequest(req) {
-  let { host, port, hostname, pathname } = req.meta;
-  let socket = await connect(host, port);
-  let { read, write } = wrapStream(socket, {
+  let { protocol, host, port, hostname, pathname } = req.meta;
+  let stream = socketWrap(await connect(host, port));
+  if (protocol === 'https') {
+    stream = await tlsWrap(stream, host);
+  }
+  let { read, write } = codecWrap(stream, {
     encode: encoder(),
     decode: decoder()
   });
@@ -201,6 +207,9 @@ async function httpRequest(req) {
   req.headers.set('Host', hostname);
   req.headers.set('Connection', 'close');
   req.headers.set('User-Agent', 'MagicScript');
+  if (!req.body) {
+    req.headers.set('Content-Length', '0');
+  }
 
   let headers = [];
   for (let [key, value] of req.headers) {
@@ -213,7 +222,7 @@ async function httpRequest(req) {
     headers
   });
   if (req.body) {
-    throw new Error('TODO: implement request bodies');
+    await write(req.body);
   }
   await write('');
 

@@ -11,7 +11,13 @@ async function main() {
   res = await fetch('http://lit.luvit.io');
   print('HTTP Response', JSON.stringify(res, null, 2));
   data = await res.json();
-  print('Http Data', JSON.stringify(data, null, 2));
+  print('HTTP Data', JSON.stringify(data, null, 2));
+
+  print('Fetching https://lit.luvit.io...');
+  res = await fetch('https://lit.luvit.io');
+  print('HTTPS Response', JSON.stringify(res, null, 2));
+  data = await res.json();
+  print('HTTPS Data', JSON.stringify(data, null, 2));
 }
 
 main().catch(err => print(err.stack));
