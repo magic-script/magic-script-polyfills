@@ -1,15 +1,17 @@
-/// <reference path="../lib.uv.d.ts"/>
-import { Fs, fs } from 'uv';
 import { guess } from './weblit-js/libs/mime.js';
-import { connect } from './tcp.js';
+import { socketWrap } from './weblit-js/libs/socket-wrap.js';
+import { tlsWrap } from './weblit-js/libs/tls-wrap.js';
+import { codecWrap } from './weblit-js/libs/codec-wrap.js';
 import { decoder, encoder } from './weblit-js/libs/http-codec.js';
-import { wrapStream } from './weblit-js/libs/gen-channel.js';
+import { readFileStream, writeFileStream, expandBody } from './fs.js';
+import { connect } from './tcp.js';
 import { Headers } from './headers.js';
 export { Headers };
 
 export let fetch = makeFetch({
   file: fileRequest,
-  http: httpRequest
+  http: httpRequest,
+  https: httpRequest,
 });
 
 function makeFetch(protocols) {
@@ -24,7 +26,7 @@ function makeFetch(protocols) {
     let protocol = req.meta.protocol;
     let handler = protocols[protocol];
     if (handler) return handler(req);
-    if (protocol === 'https') throw new Error('TODO: Implement TLS for HTTPS clients');
+    throw new Error(`Unknown protocol: ${protocol}`);
   };
 }
 
@@ -191,9 +193,12 @@ function findCaller(_, stack) {
  * @returns {Response}
  */
 async function httpRequest(req) {
-  let { host, port, hostname, pathname } = req.meta;
-  let socket = await connect(host, port);
-  let { read, write } = wrapStream(socket, {
+  let { protocol, host, port, hostname, pathname } = req.meta;
+  let stream = socketWrap(await connect(host, port));
+  if (protocol === 'https') {
+    stream = await tlsWrap(stream, host);
+  }
+  let { read, write } = codecWrap(stream, {
     encode: encoder(),
     decode: decoder()
   });
@@ -201,6 +206,9 @@ async function httpRequest(req) {
   req.headers.set('Host', hostname);
   req.headers.set('Connection', 'close');
   req.headers.set('User-Agent', 'MagicScript');
+  if (!req.body) {
+    req.headers.set('Content-Length', '0');
+  }
 
   let headers = [];
   for (let [key, value] of req.headers) {
@@ -213,7 +221,7 @@ async function httpRequest(req) {
     headers
   });
   if (req.body) {
-    throw new Error('TODO: implement request bodies');
+    await expandBody(req.body, write);
   }
   await write('');
 
@@ -221,10 +229,12 @@ async function httpRequest(req) {
 
   async function next() {
     let part = await read();
-    if (!part || part.length === 0) return { done: true };
-    await write();
+    if (!part || part.length === 0) {
+      await write();
+      return { done: true };
+    }
     return {
-      done: false, value: part
+      done: false, value: part.buffer
     };
   }
   let body = { [Symbol.asyncIterator]() { return this; }, next };
@@ -240,80 +250,24 @@ async function httpRequest(req) {
   });
 }
 
-function readFileStream(path, offset = 0, end = -1) {
-  let { open, read, close } = fs;
-  let fd;
-  let buf = new Uint8Array(256 * 512);
-  let queue = [];
-  let reads = 0;
-  let writes = 0;
-  let reading = false;
-
-  return new Promise((resolve, reject) =>
-    open(new Fs(), path, 0, 0, (err, value) =>
-      err ? reject(err)
-        : ((fd = value),
-        resolve({
-          [Symbol.asyncIterator]() { return this; },
-          next
-        }))
-    )
-  );
-
-  function next() {
-    return new Promise((resolve, reject) => {
-      if (writes > reads) {
-        let { error, result } = queue[reads];
-        queue[reads++] = null;
-        return error ? reject(error) : resolve(result);
-      }
-      queue[reads++] = { resolve, reject };
-      reading = true;
-      pull();
-    });
-  }
-
-  function push({ error, result }) {
-    if (reads > writes) {
-      let { resolve, reject } = queue[writes];
-      queue[writes++] = null;
-      return error ? reject(error) : resolve(result);
-    }
-    queue[writes++] = { error, result };
-    if (writes > reads) reading = false;
-  }
-
-  function pull() {
-    if (!reading) return;
-    read(new Fs(), fd, buf.buffer, offset, onRead);
-  }
-
-  function onRead(err, bytesRead) {
-    if (err) return push({ error: err });
-    if (end >= 0 && bytesRead > end - offset) {
-      bytesRead = end - offset;
-    }
-    if (bytesRead > 0) {
-      offset += bytesRead;
-      push({ result: { done: false, value: buf.slice(0, bytesRead) } });
-      pull();
-    } else {
-      push({ result: { done: true } });
-      close(new Fs(), fd);
-    }
-  }
-}
-
 /**
  * Load a local file as if it was an HTTP request.
  * @param {Request} req
  * @returns {Response}
  */
 async function fileRequest(req) {
-  let body = await readFileStream(req.meta.path);
-  return new Response(body, {
-    headers: {
-      'Content-Type': guess(req.meta.path),
-    }
-  });
+  let { meta: { path }, method, body } = req;
+  if (method === 'GET') {
+    let body = await readFileStream(path);
+    return new Response(body, {
+      headers: {
+        'Content-Type': guess(path),
+      }
+    });
+  }
+  if (method === 'PUT' && body) {
+    await writeFileStream(path, body);
+    return new Response();
+  }
+  throw new Error('file fetch only supports GET to read files and PUT to write files');
 }
