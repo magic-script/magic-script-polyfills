@@ -27,18 +27,12 @@ async function main() {
   let [, filename] = res.headers['Content-Disposition'].match(/filename=([^ ]+)/);
   await fetch(filename, { method: 'PUT', body: res.body });
 
-  print('scandir on tests folder');
-  for (let entry of await scandir('tests')) {
-    print(JSON.stringify(entry, null, 2));
-  }
-
   print('Building luvit package from online parts');
   await fetch('wscat', {
     method: 'PUT', body: [
       // First part of body is the luvi binary from github releases.
       // This requires to manually follow the redirect since our fetch doesn't do it yet.
       fetch('https://github.com/luvit/luvi/releases/download/v2.7.6/luvi-tiny-Linux_x86_64')
-        .then(res => fetch(res.headers.Location))
         .then(res => res.body),
       // The second part of the body is the zip for the wscat utility.
       // Again we're just putting a promise to a stream in the array.
@@ -46,10 +40,19 @@ async function main() {
         .then(res => res.body)
     ]
   });
+  print('Setting wscat to exec');
   await chmod('tests/wscat', parseInt('755', 8));
   let meta = await stat('tests/wscat');
   print('tests/wscat', JSON.stringify(meta, null, 2));
   print('wscat file created');
+
+  print('scandir on tests folder');
+  let dir = await scandir('tests')
+  for (let entry of dir) {
+    print(JSON.stringify(entry, null, 2));
+  }
 }
 
-main().catch(err => print(err.stack));
+
+
+main()

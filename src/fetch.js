@@ -30,19 +30,17 @@ function makeFetch(protocols) {
   };
 }
 
-
 export class Response {
   constructor(body, init = {}) {
-    let status = init.status || 200;
-    let statusText = init.statusText || 'OK';
+    let { url, status = 200, statusText = 'OK', redirected = false } = init;
     let headers = new Headers(init.headers);
-    let url = init.url;
     Object.defineProperties(this, {
       url: { value: url, enumerable: true, writable: false },
       body: { value: body, enumerable: true, writable: false },
       status: { value: status, enumerable: true, writable: false },
       statusText: { value: statusText, enumerable: true, writable: false },
-      headers: { value: headers, enumerable: true, writable: false }
+      headers: { value: headers, enumerable: true, writable: false },
+      redirected: { value: redirected, enumerable: true, writable: false }
     });
   }
 
@@ -93,15 +91,15 @@ function binToStr(bin) {
 export class Request {
   constructor(input, init = {}) {
     let [url, meta] = normalizeUrl(input);
-    let method = init.method || 'GET';
+    let { method = 'GET', body, redirect = 'follow' } = init;
     let headers = new Headers(init.headers);
-    let body = init.body;
     Object.defineProperties(this, {
       meta: { value: meta, writable: false },
       url: { value: url, enumerable: true, writable: false },
       method: { value: method, enumerable: true, writable: false },
       headers: { value: headers, enumerable: true, writable: false },
-      body: { value: body, enumerable: true, writable: false }
+      body: { value: body, enumerable: true, writable: false },
+      redirect: { value: redirect, enumerable: true, writable: false }
     });
   }
 }
@@ -186,13 +184,12 @@ function findCaller(_, stack) {
   return other || self;
 }
 
-
 /**
  * Perform an HTTP Request
  * @param {Request} req
  * @returns {Response}
  */
-async function httpRequest(req) {
+async function httpRequest(req, redirected = 0) {
   let { protocol, host, port, hostname, pathname } = req.meta;
   let stream = socketWrap(await connect(host, port));
   if (protocol === 'https') {
@@ -230,7 +227,7 @@ async function httpRequest(req) {
   async function next() {
     let part = await read();
     if (!part || part.length === 0) {
-      await write();
+      await stream.close();
       return { done: true };
     }
     return {
@@ -242,12 +239,31 @@ async function httpRequest(req) {
   for (let i = 0, l = res.headers.length; i < l; i += 2) {
     resHeaders.set(res.headers[i], res.headers[i + 1]);
   }
-  return new Response(body, {
+
+  let response = new Response(body, {
     status: res.code,
     statusText: res.reason,
     url: req.url,
-    headers: resHeaders
+    headers: resHeaders,
+    redirected: !!redirected
   });
+
+  if (response.status >= 300 && response.status < 400 && response.headers.Location) {
+    if (req.redirect === 'follow') {
+      if (req.method === 'GET') {
+        await response.arrayBuffer();
+        if (redirected > 5) {
+          throw new Error('Too many redirects');
+        }
+        return httpRequest(new Request(response.headers.Location), redirected + 1);
+      }
+    }
+    if (req.redirect === 'error') {
+      throw new Error('Unexpected redirect');
+    }
+  }
+
+  return response;
 }
 
 /**
@@ -261,7 +277,7 @@ async function fileRequest(req) {
     let body = await readFileStream(path);
     return new Response(body, {
       headers: {
-        'Content-Type': guess(path),
+        'Content-Type': guess(path)
       }
     });
   }
