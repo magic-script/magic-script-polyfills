@@ -1,6 +1,6 @@
 {
   "name": "magic-script-polyfills",
-  "version": "0.4.2",
+  "version": "0.4.3",
   "publishConfig": {
     "registry": "https://nexus.magicleap.blue/repository/npm-internal/"
   },
