@@ -3,7 +3,7 @@ import { chmod, scandir, stat } from '../src/fs.js';
 
 async function main () {
   print('Fetching test.json...');
-  let res = await fetch('test.json');
+  let res = await fetch('tests/test.json');
   print('RESPONSE', JSON.stringify(res, null, 2));
   let data = await res.json();
   print('test.json:', JSON.stringify(data, null, 2));

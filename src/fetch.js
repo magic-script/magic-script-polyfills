@@ -124,11 +124,7 @@ function normalizeUrl (input) {
 
   if (!match) {
     protocol = 'file';
-    if (input[0] === '/') {
-      input = `file:/${input}`;
-    } else {
-      input = `file://${getCaller()}/../${input}`;
-    }
+    input = `file://${input}`;
   } else {
     protocol = match[1];
   }
@@ -159,29 +155,6 @@ function normalizeUrl (input) {
     return [url, { protocol, path, query, hash }];
   }
   throw new TypeError(`Unsupported protocol: '${protocol}'`);
-}
-
-// Use the V8 Stack Trace API to find the filename of the caller outside this file.
-function getCaller () {
-  let old = Error.prepareStackTrace;
-  Error.prepareStackTrace = findCaller;
-  let caller = new Error().stack;
-  Error.prepareStackTrace = old;
-  return caller;
-}
-
-function findCaller (_, stack) {
-  // Skip down the stack till get leave this file.
-  let self = stack[0].getFileName();
-  let other;
-  for (let frame of stack) {
-    let entry = frame.getFileName();
-    if (entry !== self) {
-      other = entry;
-      break;
-    }
-  }
-  return other || self;
 }
 
 /**
