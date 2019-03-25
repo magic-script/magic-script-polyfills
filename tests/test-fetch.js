@@ -1,7 +1,7 @@
 import { fetch } from '../src/fetch.js';
 import { chmod, scandir, stat } from '../src/fs.js';
 
-async function main() {
+async function main () {
   print('Fetching test.json...');
   let res = await fetch('test.json');
   print('RESPONSE', JSON.stringify(res, null, 2));
@@ -29,7 +29,8 @@ async function main() {
 
   print('Building luvit package from online parts');
   await fetch('wscat', {
-    method: 'PUT', body: [
+    method: 'PUT',
+    body: [
       // First part of body is the luvi binary from github releases.
       // This requires to manually follow the redirect since our fetch doesn't do it yet.
       fetch('https://github.com/luvit/luvi/releases/download/v2.7.6/luvi-tiny-Linux_x86_64')
@@ -47,12 +48,10 @@ async function main() {
   print('wscat file created');
 
   print('scandir on tests folder');
-  let dir = await scandir('tests')
+  let dir = await scandir('tests');
   for (let entry of dir) {
     print(JSON.stringify(entry, null, 2));
   }
 }
 
-
-
-main()
+main();

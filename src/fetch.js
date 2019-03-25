@@ -11,11 +11,11 @@ export { Headers };
 export let fetch = makeFetch({
   file: fileRequest,
   http: httpRequest,
-  https: httpRequest,
+  https: httpRequest
 });
 
-function makeFetch(protocols) {
-  return async function fetch(input, init) {
+function makeFetch (protocols) {
+  return async function fetch (input, init) {
     let req;
     if (input instanceof Request) {
       // TODO: should we apply `init` to the request?
@@ -31,7 +31,7 @@ function makeFetch(protocols) {
 }
 
 export class Response {
-  constructor(body, init = {}) {
+  constructor (body, init = {}) {
     let { url, status = 200, statusText = 'OK', redirected = false } = init;
     let headers = new Headers(init.headers);
     Object.defineProperties(this, {
@@ -44,24 +44,24 @@ export class Response {
     });
   }
 
-  async arrayBuffer() {
+  async arrayBuffer () {
     return consume(this.body);
   }
 
-  async text() {
+  async text () {
     return binToStr(await consume(this.body));
   }
 
-  async json() {
+  async json () {
     return JSON.parse(binToStr(await consume(this.body)));
   }
 
-  get ok() {
+  get ok () {
     return this.status >= 200 && this.status < 300;
   }
 }
 
-async function consume(stream) {
+async function consume (stream) {
   let total = 0;
   let parts = [];
   for await (let part of stream) {
@@ -77,7 +77,7 @@ async function consume(stream) {
   return array.buffer;
 }
 
-function binToStr(bin) {
+function binToStr (bin) {
   let array = new Uint8Array(bin);
   let end = array.length;
   let raw = '';
@@ -89,7 +89,7 @@ function binToStr(bin) {
 }
 
 export class Request {
-  constructor(input, init = {}) {
+  constructor (input, init = {}) {
     let [url, meta] = normalizeUrl(input);
     let { method = 'GET', body, redirect = 'follow' } = init;
     let headers = new Headers(init.headers);
@@ -104,7 +104,7 @@ export class Request {
   }
 }
 
-function pathJoin(base, ...inputs) {
+function pathJoin (base, ...inputs) {
   let segments = [];
   for (let part of (base + '/' + inputs.join('/')).split(/\/+/)) {
     if (part === '' || part === '.') continue;
@@ -117,7 +117,7 @@ function pathJoin(base, ...inputs) {
   return (base[0] === '/' ? '/' : '') + segments.join('/');
 }
 
-function normalizeUrl(input) {
+function normalizeUrl (input) {
   if (typeof input !== 'string') { throw new TypeError('Input must be string'); }
   let match = input.match(/^([a-z]+):/);
   let protocol;
@@ -162,7 +162,7 @@ function normalizeUrl(input) {
 }
 
 // Use the V8 Stack Trace API to find the filename of the caller outside this file.
-function getCaller() {
+function getCaller () {
   let old = Error.prepareStackTrace;
   Error.prepareStackTrace = findCaller;
   let caller = new Error().stack;
@@ -170,7 +170,7 @@ function getCaller() {
   return caller;
 }
 
-function findCaller(_, stack) {
+function findCaller (_, stack) {
   // Skip down the stack till get leave this file.
   let self = stack[0].getFileName();
   let other;
@@ -189,7 +189,7 @@ function findCaller(_, stack) {
  * @param {Request} req
  * @returns {Response}
  */
-async function httpRequest(req, redirected = 0) {
+async function httpRequest (req, redirected = 0) {
   let { protocol, host, port, hostname, pathname } = req.meta;
   let stream = socketWrap(await connect(host, port));
   if (protocol === 'https') {
@@ -224,7 +224,7 @@ async function httpRequest(req, redirected = 0) {
 
   let res = await read();
 
-  async function next() {
+  async function next () {
     let part = await read();
     if (!part || part.length === 0) {
       await stream.close();
@@ -234,7 +234,7 @@ async function httpRequest(req, redirected = 0) {
       done: false, value: part.buffer
     };
   }
-  let body = { [Symbol.asyncIterator]() { return this; }, next };
+  let body = { [Symbol.asyncIterator] () { return this; }, next };
   let resHeaders = new Headers();
   for (let i = 0, l = res.headers.length; i < l; i += 2) {
     resHeaders.set(res.headers[i], res.headers[i + 1]);
@@ -271,7 +271,7 @@ async function httpRequest(req, redirected = 0) {
  * @param {Request} req
  * @returns {Response}
  */
-async function fileRequest(req) {
+async function fileRequest (req) {
   let { meta: { path }, method, body } = req;
   if (method === 'GET') {
     let body = await readFileStream(path);
