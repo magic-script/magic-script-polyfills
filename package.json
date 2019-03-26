@@ -1,9 +1,6 @@
 {
   "name": "magic-script-polyfills",
   "version": "1.0.0",
-  "publishConfig": {
-    "registry": "https://nexus.magicleap.blue/repository/npm-internal/"
-  },
   "description": "Polyfills to give browser and/or node apis in magicscript",
   "module": "src/polyfills.js",
   "dependencies": {},
