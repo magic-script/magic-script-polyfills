@@ -1,6 +1,6 @@
 {
   "name": "magic-script-polyfills",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Polyfills to give browser and/or node apis in magicscript",
   "module": "src/polyfills.js",
   "dependencies": {},

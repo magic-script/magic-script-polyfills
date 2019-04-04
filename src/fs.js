@@ -103,7 +103,7 @@ export async function writeFileStream (path, stream, options = {}) {
  * @returns {IterableIterator<Promise<ArrayBuffer>>}
  */
 export async function readFileStream (path, options = {}) {
-  let { flags = 'r', mode = parseInt('644', 8), offset = 0, end = -1, chunkSize = 4 * 1024 } = options;
+  let { flags = 'r', mode = parseInt('644', 8), offset = 0, end = -1, chunkSize = 128 * 1024 } = options;
   let buf = new ArrayBuffer(chunkSize);
 
   let fd = await open(path, flags, mode);
