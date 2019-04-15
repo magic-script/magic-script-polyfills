@@ -70,4 +70,4 @@ let timeout = new Timer();
 timeout.start(() => {
   timeout.close();
   req.cancel();
-}, 10);
+}, 100, 0);
