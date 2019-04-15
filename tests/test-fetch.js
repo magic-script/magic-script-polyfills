@@ -24,7 +24,11 @@ async function main () {
   res = await fetch('https://lit.luvit.io/packages/creationix/gamepad/latest.zip');
   print('RESPONSE', JSON.stringify(res, null, 2));
   // Get the server specified filename from the response headers
-  let [, filename] = res.headers['Content-Disposition'].match(/filename=([^ ]+)/);
+  let filename = "latest.zip"
+  let contentDisposition = res.headers['Content-Disposition'];
+  if (contentDisposition) {
+    filename = contentDisposition.match(/filename=([^ ]+)/)[1] || filename;
+  }
   await fetch(filename, { method: 'PUT', body: res.body });
 
   print('Building luvit package from online parts');
@@ -42,9 +46,9 @@ async function main () {
     ]
   });
   print('Setting wscat to exec');
-  await chmod('tests/wscat', parseInt('755', 8));
-  let meta = await stat('tests/wscat');
-  print('tests/wscat', JSON.stringify(meta, null, 2));
+  await chmod('wscat', parseInt('755', 8));
+  let meta = await stat('wscat');
+  print('wscat', JSON.stringify(meta, null, 2));
   print('wscat file created');
 
   print('scandir on tests folder');
