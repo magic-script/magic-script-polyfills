@@ -14,15 +14,18 @@ fs.scandir(new Fs(), ".", 0, (err, req) => {
   for (let { name, type } of iter) {
     print(name, type)
   }
+
+  // Recursive using polyfill helper
+  dir('.')
+
 })
 
-// Recursive using polyfill helper
-dir('.')
 async function dir(path) {
   for (let { name, type } of await scandir(path)) {
-    print(path, name, type)
+    let subPath = path + "/" + name
+    print(subPath, type)
     if (type === 'dir') {
-      await dir(path + '/' + name);
+      await dir(subPath);
     }
   }
 }
