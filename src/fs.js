@@ -138,13 +138,25 @@ export async function readFileStream (path, options = {}) {
   }
 }
 
+// Do simple body cleanup rules that don't cause unneeded buffering in memory.
+// This means we can get total length for string, Uint8Array, or ArrayBuffer
+export function prepareBody (data) {
+  // Convert strings into UTF8-encoded Uint8Arrays
+  if (typeof data === 'string') {
+    return new TextEncoder().encode(data);
+  }
+  return data;
+}
+
 export async function expandBody (data, onBuffer) {
   if (typeof data.then === 'function') {
     data = await data;
   }
   if (typeof data === 'string') {
-    await onBuffer(new TextEncoder().encode(data).buffer);
-    return;
+    return onBuffer(new TextEncoder().encode(data));
+  }
+  if (typeof data.byteLength === 'number') {
+    return onBuffer(data);
   }
   if (data[Symbol.asyncIterator]) {
     for await (let part of data) {
@@ -156,10 +168,6 @@ export async function expandBody (data, onBuffer) {
     for (let part of data) {
       await expandBody(part, onBuffer);
     }
-    return;
-  }
-  if (typeof data.byteLength === 'number') {
-    await onBuffer(data);
     return;
   }
   throw new Error('Unsupported value type in body stream');
