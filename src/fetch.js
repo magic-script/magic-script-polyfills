@@ -3,7 +3,7 @@ import { socketWrap } from './weblit-js/libs/socket-wrap.js';
 import { tlsWrap } from './weblit-js/libs/tls-wrap.js';
 import { codecWrap } from './weblit-js/libs/codec-wrap.js';
 import { decoder, encoder } from './weblit-js/libs/http-codec.js';
-import { readFileStream, writeFileStream, expandBody } from './fs.js';
+import { readFileStream, writeFileStream, prepareBody, expandBody } from './fs.js';
 import { connect } from './tcp.js';
 import { Headers } from './headers.js';
 export { Headers };
@@ -98,7 +98,7 @@ export class Request {
       url: { value: url, enumerable: true, writable: false },
       method: { value: method, enumerable: true, writable: false },
       headers: { value: headers, enumerable: true, writable: false },
-      body: { value: body, enumerable: true, writable: false },
+      body: { value: prepareBody(body), enumerable: true, writable: false },
       redirect: { value: redirect, enumerable: true, writable: false }
     });
   }
@@ -176,7 +176,16 @@ async function httpRequest (req, redirected = 0) {
   req.headers.set('Host', hostname);
   req.headers.set('Connection', 'close');
   req.headers.set('User-Agent', 'MagicScript');
-  if (!req.body) {
+  if (req.body != null) {
+    if (typeof req.body === 'object' && typeof req.body.byteLength === 'number') {
+      // If we know the length up-front, set a header for it.
+      req.headers.set('Content-Length', String(req.body.byteLength));
+    } else {
+      // If not, use chunked encoding.
+      req.headers.set('Transfer-Encoding', 'chunked');
+    }
+  } else if (req.method !== 'GET') {
+    // Tell non GET requests that there is no body expected if there was none.
     req.headers.set('Content-Length', '0');
   }
 
@@ -195,7 +204,7 @@ async function httpRequest (req, redirected = 0) {
   }
   await write('');
 
-  let res = await read();
+  let resHead = await read();
 
   async function next () {
     let part = await read();
@@ -209,26 +218,26 @@ async function httpRequest (req, redirected = 0) {
   }
   let body = { [Symbol.asyncIterator] () { return this; }, next };
   let resHeaders = new Headers();
-  for (let i = 0, l = res.headers.length; i < l; i += 2) {
-    resHeaders.set(res.headers[i], res.headers[i + 1]);
+  for (let i = 0, l = resHead.headers.length; i < l; i += 2) {
+    resHeaders.set(resHead.headers[i], resHead.headers[i + 1]);
   }
 
-  let response = new Response(body, {
-    status: res.code,
-    statusText: res.reason,
+  let res = new Response(body, {
+    status: resHead.code,
+    statusText: resHead.reason,
     url: req.url,
     headers: resHeaders,
     redirected: !!redirected
   });
 
-  if (response.status >= 300 && response.status < 400 && response.headers.Location) {
+  if (res.status >= 300 && res.status < 400 && res.headers.Location) {
     if (req.redirect === 'follow') {
       if (req.method === 'GET') {
-        await response.arrayBuffer();
+        await res.arrayBuffer();
         if (redirected > 5) {
           throw new Error('Too many redirects');
         }
-        return httpRequest(new Request(response.headers.Location), redirected + 1);
+        return httpRequest(new Request(res.headers.Location), redirected + 1);
       }
     }
     if (req.redirect === 'error') {
@@ -236,7 +245,7 @@ async function httpRequest (req, redirected = 0) {
     }
   }
 
-  return response;
+  return res;
 }
 
 /**

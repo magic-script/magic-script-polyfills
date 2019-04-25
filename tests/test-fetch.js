@@ -8,6 +8,28 @@ async function main () {
   let data = await res.json();
   print('test.json:', JSON.stringify(data, null, 2));
 
+  print("fetching 'https://jsonplaceholder.typicode.com/todos/1'");
+  res = await fetch('https://jsonplaceholder.typicode.com/todos/1');
+  print('HTTP Response', JSON.stringify(res, null, 2));
+  data = await res.json();
+  print('HTTP Data', JSON.stringify(data, null, 2));
+
+  print("Posting to 'https://jsonplaceholder.typicode.com/posts'");
+  res = await fetch('https://jsonplaceholder.typicode.com/posts', {
+    method: 'POST',
+    body: JSON.stringify({
+      title: 'foo',
+      body: 'bar',
+      userId: 1
+    }),
+    headers: {
+      'Content-type': 'application/json; charset=UTF-8'
+    }
+  });
+  print('HTTP Response', JSON.stringify(res, null, 2));
+  data = await res.json();
+  print('HTTP Data', JSON.stringify(data, null, 2));
+
   print('Fetching http://lit.luvit.io...');
   res = await fetch('http://lit.luvit.io');
   print('HTTP Response', JSON.stringify(res, null, 2));
@@ -24,7 +46,7 @@ async function main () {
   res = await fetch('https://lit.luvit.io/packages/creationix/gamepad/latest.zip');
   print('RESPONSE', JSON.stringify(res, null, 2));
   // Get the server specified filename from the response headers
-  let filename = "latest.zip"
+  let filename = 'latest.zip';
   let contentDisposition = res.headers['Content-Disposition'];
   if (contentDisposition) {
     filename = contentDisposition.match(/filename=([^ ]+)/)[1] || filename;
