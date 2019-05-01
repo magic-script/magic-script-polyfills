@@ -8,9 +8,14 @@ function check (actual, expected) {
   }
 }
 check(resolveUrl('http://test.com/foo/bar', '/baz'), 'http://test.com/baz');
+check(resolveUrl('http://test.com/foo/', '/baz'), 'http://test.com/baz');
 check(resolveUrl('http://test.com/foo/bar', 'baz'), 'http://test.com/foo/baz');
+check(resolveUrl('http://test.com/foo/', 'baz'), 'http://test.com/foo/baz');
 check(resolveUrl('http://test.com/foo/bar', './baz'), 'http://test.com/foo/baz');
+check(resolveUrl('http://test.com/foo/', './baz'), 'http://test.com/foo/baz');
 check(resolveUrl('http://test.com/foo/bar', '../baz'), 'http://test.com/baz');
+check(resolveUrl('http://test.com/foo/', '../baz'), 'http://test.com/baz');
 check(resolveUrl('http://test.com/foo/bar', '//test.org/baz'), 'http://test.org/baz');
 check(resolveUrl('https://test.com/foo/bar', '//test.org/baz'), 'https://test.org/baz');
+check(resolveUrl('http://test.com/foo/bar', 'https://test.com/foo/bar'), 'https://test.com/foo/bar');
 print('All tests pass!');
