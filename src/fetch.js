@@ -6,6 +6,7 @@ import { decoder, encoder } from './weblit-js/libs/http-codec.js';
 import { readFileStream, writeFileStream, prepareBody, expandBody } from './fs.js';
 import { connect } from './tcp.js';
 import { Headers } from './headers.js';
+import { resolveUrl } from './resolve.js';
 export { Headers };
 
 export let fetch = makeFetch({
@@ -237,7 +238,8 @@ async function httpRequest (req, redirected = 0) {
         if (redirected > 5) {
           throw new Error('Too many redirects');
         }
-        return httpRequest(new Request(res.headers.Location), redirected + 1);
+        let location = resolveUrl(req.url, res.headers.Location);
+        return httpRequest(new Request(location), redirected + 1);
       }
     }
     if (req.redirect === 'error') {
