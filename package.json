@@ -1,6 +1,6 @@
 {
   "name": "magic-script-polyfills",
-  "version": "1.0.3",
+  "version": "2.0.0",
   "description": "Polyfills to give browser and/or node apis in magicscript",
   "module": "src/polyfills.js",
   "dependencies": {},
@@ -17,7 +17,7 @@
     "MagicScript"
   ],
   "author": "Tim Caswell",
-  "license": "MIT",
+  "license": "Apache 2.0",
   "bugs": {
     "url": "https://github.com/magic-script/magic-script-polyfills/issues"
   },
