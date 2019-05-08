@@ -1,8 +1,8 @@
-import { guess } from './weblit-js/libs/mime.js';
-import { socketWrap } from './weblit-js/libs/socket-wrap.js';
-import { tlsWrap } from './weblit-js/libs/tls-wrap.js';
-import { codecWrap } from './weblit-js/libs/codec-wrap.js';
-import { decoder, encoder } from './weblit-js/libs/http-codec.js';
+import { guess } from './mime.js';
+import { socketWrap } from './socket-wrap.js';
+import { tlsWrap } from './tls-wrap.js';
+import { codecWrap } from './codec-wrap.js';
+import { decoder, encoder } from './http-codec.js';
 import { readFileStream, writeFileStream, prepareBody, expandBody } from './fs.js';
 import { connect } from './tcp.js';
 import { Headers } from './headers.js';

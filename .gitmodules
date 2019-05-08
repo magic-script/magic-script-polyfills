@@ -1,3 +1,0 @@
-[submodule "weblit-js"]
-	path = src/weblit-js
-	url = https://github.com/creationix/weblit-js.git
