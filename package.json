@@ -1,6 +1,6 @@
 {
   "name": "magic-script-polyfills",
-  "version": "2.1.0",
+  "version": "2.1.1",
   "description": "Polyfills to give browser and/or node apis in magicscript",
   "module": "src/polyfills.js",
   "dependencies": {},
@@ -9,6 +9,10 @@
     "build": "rollup -c",
     "lint": "eslint src --fix"
   },
+  "files": [
+    "src/**/*.js",
+    "README.md"
+  ],
   "repository": {
     "type": "git",
     "url": "git+https://github.com/magic-script/magic-script-polyfills.git"
