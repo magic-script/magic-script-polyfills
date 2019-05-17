@@ -9,3 +9,4 @@ export {
 } from './timers.js';
 export { fetch, Headers, Request, Response } from './fetch.js';
 export { TextEncoder } from './text-encoder.js';
+export { XMLHttpRequest } from './xhr.js';

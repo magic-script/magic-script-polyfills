@@ -10,7 +10,8 @@ import {
   Headers,
   Request,
   Response,
-  TextEncoder
+  TextEncoder,
+  XMLHttpRequest
 } from './index.js';
 
 globalThis.setTimeout = setTimeout;
@@ -24,6 +25,6 @@ globalThis.Headers = Headers;
 globalThis.Request = Request;
 globalThis.Response = Response;
 globalThis.TextEncoder = TextEncoder;
+globalThis.XMLHttpRequest = XMLHttpRequest;
 
-// This helps with libraries like underscore that don't know about globalThis yet.
 globalThis.window = globalThis;
