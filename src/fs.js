@@ -95,11 +95,6 @@ export async function writeFileStream (path, stream, options = {}) {
   let offset = 0;
   try {
     await expandBody(stream, async data => {
-      print('data', data);
-      print('data.constructor', data.constructor);
-      print('data.length', data.length);
-      print('data.byteLength', data.byteLength);
-      print('data.buffer.byteLength', data.buffer.byteLength);
       await write(fd, data, offset);
       offset += data.byteLength;
     });

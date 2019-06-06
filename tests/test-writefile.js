@@ -1,7 +1,7 @@
 /* global print */
 import { fetch } from '../src/fetch.js';
 import { assert } from '../src/assert.js';
-import { writeFileStream } from '../src/fs.js';
+import { writeFileStream, readFileStream } from '../src/fs.js';
 
 const data = {
   squares: [],

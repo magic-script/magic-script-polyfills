@@ -7,6 +7,7 @@ import { readFileStream, writeFileStream, prepareBody, expandBody } from './fs.j
 import { connect } from './tcp.js';
 import { Headers } from './headers.js';
 import { resolveUrl } from './resolve.js';
+import { consume, binToStr } from './utils.js';
 export { Headers };
 
 export let fetch = makeFetch({
@@ -60,33 +61,6 @@ export class Response {
   get ok () {
     return this.status >= 200 && this.status < 300;
   }
-}
-
-async function consume (stream) {
-  let total = 0;
-  let parts = [];
-  for await (let part of stream) {
-    total += part.byteLength;
-    parts.push(part);
-  }
-  let array = new Uint8Array(total);
-  let offset = 0;
-  for (let part of parts) {
-    array.set(new Uint8Array(part), offset);
-    offset += part.byteLength;
-  }
-  return array.buffer;
-}
-
-function binToStr (bin) {
-  let array = new Uint8Array(bin);
-  let end = array.length;
-  let raw = '';
-  for (let i = 0; i < end; i++) {
-    raw += String.fromCharCode(array[i]);
-  }
-  // UTF8 decode
-  return decodeURIComponent(escape(raw));
 }
 
 export class Request {
