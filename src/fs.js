@@ -60,7 +60,14 @@ export let open = (path, flags, mode) => acall(fs.open, path, flags, mode);
  * @param {ArrayBuffer} buffer
  * @param {number} offset
  */
-export let write = (fd, buffer, offset) => acall(fs.write, fd, buffer, offset);
+export let write = (fd, buffer, offset) => {
+  // Workaround bug in 0.96 that uses all bytes in underlying buffer if typed array.
+  if (buffer instanceof Uint8Array) {
+    // Force a reallocation of the internal ArrayBuffer with the right size
+    buffer = buffer.slice();
+  }
+  return acall(fs.write, fd, buffer, offset);
+};
 
 /**
  *
@@ -88,6 +95,11 @@ export async function writeFileStream (path, stream, options = {}) {
   let offset = 0;
   try {
     await expandBody(stream, async data => {
+      print('data', data);
+      print('data.constructor', data.constructor);
+      print('data.length', data.length);
+      print('data.byteLength', data.byteLength);
+      print('data.buffer.byteLength', data.buffer.byteLength);
       await write(fd, data, offset);
       offset += data.byteLength;
     });
