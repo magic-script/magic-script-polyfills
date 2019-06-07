@@ -1,4 +1,4 @@
-// Also place on globalThis
+/* global globalThis */
 import {
   setTimeout,
   clearTimeout,
@@ -11,7 +11,8 @@ import {
   Request,
   Response,
   TextEncoder,
-  XMLHttpRequest
+  XMLHttpRequest,
+  WebSocket
 } from './index.js';
 
 globalThis.setTimeout = setTimeout;
@@ -26,5 +27,6 @@ globalThis.Request = Request;
 globalThis.Response = Response;
 globalThis.TextEncoder = TextEncoder;
 globalThis.XMLHttpRequest = XMLHttpRequest;
+globalThis.WebSocket = WebSocket;
 
 globalThis.window = globalThis;

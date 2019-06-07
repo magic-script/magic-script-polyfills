@@ -1,4 +1,5 @@
-import { fetch } from '../src/fetch.js';
+/* global fetch, print */
+import '../src/polyfills.js';
 import { chmod, scandir, stat } from '../src/fs.js';
 
 async function main () {

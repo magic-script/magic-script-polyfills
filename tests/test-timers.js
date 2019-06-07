@@ -1,4 +1,5 @@
-import { setTimeout, setInterval, clearInterval, setImmediate } from '../src/timers.js';
+/* global print, setTimeout, setInterval, clearInterval, setImmediate */
+import '../src/polyfills.js';
 
 import { Check } from 'uv';
 

@@ -80,6 +80,9 @@ export function decodeRaw (chunk, offset) {
   let opcode = (first & 0xf);
   if (opcode === 1) {
     payload = binToStr(payload);
+  } else {
+    payload = payload.buffer;
+    assert(payload.byteLength === len);
   }
 
   return [{
@@ -109,7 +112,9 @@ export function encode (item) {
 }
 
 export function encodeRaw (item) {
-  if (typeof item === 'string') {
+  if (item == null) {
+    return;
+  } else if (typeof item === 'string') {
     item = { opcode: 1, payload: item };
   } else if (item.constructor !== Object) {
     item = { opcode: 2, payload: item };

@@ -192,10 +192,7 @@ async function httpRequest (req, redirected = 0) {
     };
   }
   let body = { [Symbol.asyncIterator] () { return this; }, next };
-  let resHeaders = new Headers();
-  for (let i = 0, l = resHead.headers.length; i < l; i += 2) {
-    resHeaders.set(resHead.headers[i], resHead.headers[i + 1]);
-  }
+  let resHeaders = new Headers(resHead.headers);
 
   let res = new Response(body, {
     status: resHead.code,

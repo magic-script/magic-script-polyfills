@@ -1,3 +1,4 @@
+/* global print */
 // Use internal functions directly
 import { writeFileStream, readFileStream } from '../src/fs.js';
 import { consume, binToStr } from '../src/utils.js';

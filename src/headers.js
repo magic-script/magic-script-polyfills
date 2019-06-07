@@ -2,8 +2,14 @@ let mapKey = Symbol('HeaderMapKey');
 export class Headers {
   constructor (init = {}) {
     Object.defineProperty(this, mapKey, { value: {} });
-    for (let key in init) {
-      this.set(key, init[key]);
+    if (Array.isArray(init)) {
+      for (let i = 0, l = init.length; i < l; i += 2) {
+        this.append(init[i], init[i + 1]);
+      }
+    } else {
+      for (let key in init) {
+        this.set(key, init[key]);
+      }
     }
   }
   append (name, value) {
