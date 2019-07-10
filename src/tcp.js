@@ -15,12 +15,12 @@ const cache = {};
 export async function resolve (host, service) {
   // Resolve IP address and TCP port
   const key = host + service;
-  const cached = cache[key];
-  if (cached) return cached;
-  let cb = makeCallback();
-  getaddrinfo(new Getaddrinfo(), cb, host, '' + service);
-  let [{ ip, port }] = await cb.promise;
-  return (cache[key] = { ip, port });
+  if (!cache[key]) {
+    let cb = makeCallback();
+    getaddrinfo(new Getaddrinfo(), cb, host, '' + service);
+    cache[key] = cb.promise.then(([{ ip, port }]) => ({ ip, port }));
+  }
+  return cache[key];
 }
 
 export async function connect (host, service) {
