@@ -57,7 +57,13 @@ export function codecWrap ({ read: innerRead, write: innerWrite, ...rest }, { en
 
   async function write (value) {
     value = encode(value);
-    if (value) value = flatten(value).buffer;
+    if (value) value = flatten(value);
+    if (value instanceof Uint8Array) {
+      if (value.length < value.buffer.byteLength) {
+        value = value.slice(0, value.length)
+      }
+      value = value.buffer
+    }
     if (value === '') return;
     return innerWrite(value);
   }
