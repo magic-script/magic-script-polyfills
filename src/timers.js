@@ -22,7 +22,9 @@ export function setTimeout (fn, delay = 0, ...args) {
  * @param {Timer} timer - The identifier of the timeout you want to cancel.
  */
 export function clearTimeout (timer) {
-  timer.close();
+  if (timer) {
+    timer.close();
+  }
 }
 
 /**
@@ -48,7 +50,9 @@ export function setInterval (fn, delay, ...args) {
  * @param {Timer} timer - The identifier of the interval you want to cancel.
  */
 export function clearInterval (timer) {
-  timer.close();
+  if (timer) {
+    timer.close();
+  }
 }
 
 let check;

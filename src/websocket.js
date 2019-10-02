@@ -104,16 +104,27 @@ export class WebSocket extends Evented {
     Object.defineProperty(this, writeKey, { value: write });
     this.readyState = WebSocket.OPEN;
     this.emit('open');
+
+    function makeMessageEvent(data) {
+      return {
+        data,
+        origin: '',
+        lastEventId: '',
+        source: null,
+        ports: []
+      }
+    }
+
     let frame;
     while ((frame = await read())) {
       // print('FRAME IN', JSON.stringify(frame, null, 2));
       switch (frame.opcode) {
         case 1: // text
-          this.emit('message', frame.payload);
+          this.emit('message', makeMessageEvent(frame.payload));
           break;
         case 2: // binary
           if (this.binaryType === 'arraybuffer') {
-            this.emit('message', frame.payload);
+            this.emit('message', makeMessageEvent(frame.payload));
             break;
           }
           throw new Error('Unsupported binaryType: ' + this.binaryType);
