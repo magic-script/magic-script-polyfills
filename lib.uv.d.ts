@@ -46,7 +46,7 @@ declare module "uv" {
     peername: Address
   }
   let fs: {
-    open: (req: Fs, path: string, flags: number, mode: number, onOpen: (error: Error, fd: number) => void) => Fs,
+    open: (req: Fs, path: string, flags: string|number, mode: number, onOpen?: (error: Error, fd: number) => void) => Fs,
     close: (req: Fs, fd: number, onClose: (error: Error) => void) => Fs,
     read: (req: Fs, fd: number, buffer: ArrayBuffer, offset: number, onRead: (error: Error, bytesRead: number) => void) => Fs,
     unlink: (req: Fs, path: string, onUnlink: (error: Error)) => Fs,
