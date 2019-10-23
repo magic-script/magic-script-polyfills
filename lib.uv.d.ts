@@ -45,40 +45,54 @@ declare module "uv" {
     sockname: Address
     peername: Address
   }
-  let fs: {
-    open: (req: Fs, path: string, flags: string|number, mode: number, onOpen?: (error: Error, fd: number) => void) => Fs,
-    close: (req: Fs, fd: number, onClose: (error: Error) => void) => Fs,
-    read: (req: Fs, fd: number, buffer: ArrayBuffer, offset: number, onRead: (error: Error, bytesRead: number) => void) => Fs,
-    unlink: (req: Fs, path: string, onUnlink: (error: Error)) => Fs,
-    write: (req: Fs, fd: number, buffer: ArrayBuffer, offset: number, onRead: (error: Error, bytesRead: number) => void) => Fs,
-    mkdir: (req: Fs, args: any) => Fs,
-    mkdtemp: (req: Fs, args: any) => Fs,
-    rmdir: (req: Fs, args: any) => Fs,
-    scandir: (req: Fs, path: string, flags: integer, callback: (error: Error, req: Fs) => void) => Fs,
-    scandirNext: (req: Fs) => { name: string, type: string },
-    stat: (req: Fs, args: any) => Fs,
-    fstat: (req: Fs, args: any) => Fs,
-    lstat: (req: Fs, args: any) => Fs,
-    rename: (req: Fs, args: any) => Fs,
-    fsync: (req: Fs, args: any) => Fs,
-    fdatasync: (req: Fs, args: any) => Fs,
-    ftruncate: (req: Fs, args: any) => Fs,
-    copyfile: (req: Fs, args: any) => Fs,
-    sendfile: (req: Fs, args: any) => Fs,
-    access: (req: Fs, args: any) => Fs,
-    chmod: (req: Fs, args: any) => Fs,
-    fchmod: (req: Fs, args: any) => Fs,
-    utime: (req: Fs, args: any) => Fs,
-    futime: (req: Fs, args: any) => Fs,
-    link: (req: Fs, args: any) => Fs,
-    symlink: (req: Fs, args: any) => Fs,
-    readlink: (req: Fs, args: any) => Fs,
-    realpath: (req: Fs, args: any) => Fs,
-    chown: (req: Fs, args: any) => Fs,
-    fchown: (req: Fs, args: any) => Fs,
-    lchown: (req: Fs, args: any) => Fs,
+  namespace fs {
+    /** Non-blocking file open */
+    function open(req: Fs, path: string, flags: string|number, mode: number, onOpen?: (error: Error, fd: number) => void): Fs
+    /** Blocking file open */
+    function open(req: Fs, path: string, flags: string|number, mode: number): number
+    /** Non-blocking file close */
+    function close(req: Fs, fd: number, onClose: (error: Error) => void): Fs
+    /** Blocking file close */
+    function close(req: Fs, fd: number): void
+    /** Non-blocking file read */
+    function read(req: Fs, fd: number, buffer: ArrayBuffer, offset: number, onRead: (error: Error, bytesRead: number) => void): Fs
+    /** Blocking file read */
+    function read(req: Fs, fd: number, buffer: ArrayBuffer, offset: number): number
+    /** Non-blocking file unlink */
+    function unlink(req: Fs, path: string, onUnlink: (error: Error)): Fs
+    /** Blocking file unlink */
+    function unlink(req: Fs, path: string): void
+    /** Non-blocking file write */
+    function write(req: Fs, fd: number, buffer: ArrayBuffer, offset: number, onRead: (error: Error, bytesRead: number) => void): Fs
+    /** Blocking file write */
+    function write(req: Fs, fd: number, buffer: ArrayBuffer, offset: number): number
 
-
+    function mkdir(req: Fs, args: any): Fs
+    function mkdtemp(req: Fs, args: any): Fs
+    function rmdir(req: Fs, args: any): Fs
+    function scandir(req: Fs, path: string, flags: integer, callback: (error: Error, req: Fs) => void): Fs
+    function scandirNext(req: Fs): { name: string, type: string }
+    function stat(req: Fs, args: any): Fs
+    function fstat(req: Fs, args: any): Fs
+    function lstat(req: Fs, args: any): Fs
+    function rename(req: Fs, args: any): Fs
+    function fsync(req: Fs, args: any): Fs
+    function fdatasync(req: Fs, args: any): Fs
+    function ftruncate(req: Fs, args: any): Fs
+    function copyfile(req: Fs, args: any): Fs
+    function sendfile(req: Fs, args: any): Fs
+    function access(req: Fs, args: any): Fs
+    function chmod(req: Fs, args: any): Fs
+    function fchmod(req: Fs, args: any): Fs
+    function utime(req: Fs, args: any): Fs
+    function futime(req: Fs, args: any): Fs
+    function link(req: Fs, args: any): Fs
+    function symlink(req: Fs, args: any): Fs
+    function readlink(req: Fs, args: any): Fs
+    function realpath(req: Fs, args: any): Fs
+    function chown(req: Fs, args: any): Fs
+    function fchown(req: Fs, args: any): Fs
+    function lchown(req: Fs, args: any): Fs
   }
   function getaddrinfo(
     req: Getaddrinfo,
