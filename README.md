@@ -1,6 +1,6 @@
 # MagicScript Polyfills
 
-[![npm version](https://badge.fury.io/js/magic-script-polyfills.svg)](https://badge.fury.io/js/magic-script-polyfills) [![License](https://img.shields.io/:license-Apache%202.0-blue.svg?style=flat-square)](LICENSE)
+[![npm version](https://badge.fury.io/js/magic-script-polyfills.svg)](https://badge.fury.io/js/magic-script-polyfills) [![npm downloads](https://img.shields.io/npm/dt/magic-script-polyfills.svg)](https://www.npmjs.com/package/magic-script-polyfills) [![License](https://img.shields.io/:license-Apache%202.0-blue.svg?style=flat-square)](LICENSE)
 
 Polyfill library for MagicScript
 
