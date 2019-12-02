@@ -12,7 +12,8 @@ import {
   Response,
   TextEncoder,
   XMLHttpRequest,
-  WebSocket
+  WebSocket,
+  Storage
 } from './index.js';
 
 globalThis.setTimeout = setTimeout;
@@ -28,5 +29,6 @@ globalThis.Response = Response;
 globalThis.TextEncoder = TextEncoder;
 globalThis.XMLHttpRequest = XMLHttpRequest;
 globalThis.WebSocket = WebSocket;
+globalThis.localStorage = new Storage();
 
 globalThis.window = globalThis;
