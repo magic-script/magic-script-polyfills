@@ -16,8 +16,8 @@ export let fetch = makeFetch({
   https: httpRequest
 });
 
-function makeFetch (protocols) {
-  return async function fetch (input, init) {
+function makeFetch(protocols) {
+  return async function fetch(input, init) {
     let req;
     if (input instanceof Request) {
       // TODO: should we apply `init` to the request?
@@ -32,8 +32,9 @@ function makeFetch (protocols) {
   };
 }
 
+const bodyPromise = Symbol('arrayBufferPromise');
 export class Response {
-  constructor (body, init = {}) {
+  constructor(body, init = {}) {
     let { url, status = 200, statusText = 'OK', redirected = false } = init;
     let headers = new Headers(init.headers);
     Object.defineProperties(this, {
@@ -46,25 +47,28 @@ export class Response {
     });
   }
 
-  async arrayBuffer () {
-    return consume(this.body);
+  async arrayBuffer() {
+    if (!this[bodyPromise]) {
+      this[bodyPromise] = consume(this.body)
+    }
+    return this[bodyPromise];
   }
 
-  async text () {
-    return binToStr(await consume(this.body));
+  async text() {
+    return binToStr(await this.arrayBuffer());
   }
 
-  async json () {
-    return JSON.parse(binToStr(await consume(this.body)));
+  async json() {
+    return JSON.parse(binToStr(await this.arrayBuffer()));
   }
 
-  get ok () {
+  get ok() {
     return this.status >= 200 && this.status < 300;
   }
 }
 
 export class Request {
-  constructor (input, init = {}) {
+  constructor(input, init = {}) {
     let [url, meta] = normalizeUrl(input);
     let { method = 'GET', body, redirect = 'follow' } = init;
     let headers = new Headers(init.headers);
@@ -79,7 +83,7 @@ export class Request {
   }
 }
 
-function pathJoin (base, ...inputs) {
+function pathJoin(base, ...inputs) {
   let segments = [];
   for (let part of (base + '/' + inputs.join('/')).split(/\/+/)) {
     if (part === '' || part === '.') continue;
@@ -92,7 +96,7 @@ function pathJoin (base, ...inputs) {
   return (base[0] === '/' ? '/' : '') + segments.join('/');
 }
 
-function normalizeUrl (input) {
+function normalizeUrl(input) {
   if (typeof input !== 'string') { throw new TypeError('Input must be string'); }
   let match = input.match(/^([a-z]+):/);
   let protocol;
@@ -137,7 +141,7 @@ function normalizeUrl (input) {
  * @param {Request} req
  * @returns {Response}
  */
-async function httpRequest (req, redirected = 0) {
+async function httpRequest(req, redirected = 0) {
   let { protocol, host, port, hostname, pathname } = req.meta;
   let stream = socketWrap(await connect(host, port));
   if (protocol === 'https') {
@@ -181,7 +185,7 @@ async function httpRequest (req, redirected = 0) {
 
   let resHead = await read();
 
-  async function next () {
+  async function next() {
     let part = await read();
     if (!part || part.length === 0) {
       await stream.close();
@@ -191,7 +195,7 @@ async function httpRequest (req, redirected = 0) {
       done: false, value: part.buffer
     };
   }
-  let body = { [Symbol.asyncIterator] () { return this; }, next };
+  let body = { [Symbol.asyncIterator]() { return this; }, next };
   let resHeaders = new Headers(resHead.headers);
 
   let res = new Response(body, {
@@ -226,7 +230,7 @@ async function httpRequest (req, redirected = 0) {
  * @param {Request} req
  * @returns {Response}
  */
-async function fileRequest (req) {
+async function fileRequest(req) {
   let { meta: { path }, method, body } = req;
   if (method === 'GET') {
     let body = await readFileStream(path);

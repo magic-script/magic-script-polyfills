@@ -2,9 +2,9 @@
 /**
  * Consume an async iterator of ArrayBuffers into a single ArrayBuffer
  * @param {IterableIterator<Promise<ArrayBuffer>>} stream
- * @returns {ArrayBuffer}
+ * @returns {Promise<ArrayBuffer>}
  */
-export async function consume (stream) {
+export async function consume(stream) {
   let total = 0;
   let parts = [];
   for await (let part of stream) {
@@ -25,7 +25,7 @@ export async function consume (stream) {
  * @param {ArrayBuffer} bin
  * @returns {string}
  */
-export function binToStr (bin) {
+export function binToStr(bin) {
   const array = new Uint8Array(bin);
   const end = array.length;
   let raw = '';
@@ -41,7 +41,7 @@ export function binToStr (bin) {
  * @param {string} str
  * @returns {ArrayBuffer}
  */
-export function strToBin (str) {
+export function strToBin(str) {
   // Minimal UTF8 encode (doesn't work for all edge cases)
   const raw = unescape(encodeURIComponent(str));
   const length = raw.length;
