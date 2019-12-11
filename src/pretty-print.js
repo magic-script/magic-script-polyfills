@@ -2,6 +2,9 @@ let TERMINAL_WIDTH = 120;
 export function setWidth(width = 120) {
     TERMINAL_WIDTH = width;
 }
+export function getWidth() {
+    return TERMINAL_WIDTH;
+}
 export const themes = {
     // nice color theme using 16 ansi colors
     16: {
@@ -270,4 +273,3 @@ export function p(...args) {
         print(line);
     }
 }
-//# sourceMappingURL=pretty-print.js.map

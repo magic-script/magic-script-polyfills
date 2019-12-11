@@ -12,4 +12,3 @@ export { TextEncoder } from './text-encoder.js';
 export { XMLHttpRequest } from './xhr.js';
 export { Storage } from './localStorage.js';
 export { WebSocket } from './websocket.js';
-export { p } from "./pretty-print.js";
