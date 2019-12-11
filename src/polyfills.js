@@ -1,4 +1,7 @@
 /* global globalThis */
+
+import "./console.js";
+
 import {
   setTimeout,
   clearTimeout,
@@ -32,3 +35,4 @@ globalThis.WebSocket = WebSocket;
 globalThis.localStorage = new Storage();
 
 globalThis.window = globalThis;
+
