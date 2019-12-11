@@ -11,6 +11,7 @@
   },
   "files": [
     "src/**/*.js",
+    "rollup-plugin-node.js",
     "README.md"
   ],
   "repository": {
