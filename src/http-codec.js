@@ -56,10 +56,10 @@ export let STATUS_CODES = {
   '510': 'Not Extended' // RFC 2774
 };
 
-export function encoder () {
+export function encoder() {
   let mode;
 
-  function encodeHead (item) {
+  function encodeHead(item) {
     if (!item || item.constructor !== Object) {
       return item;
     } else if (typeof item !== 'object') {
@@ -87,7 +87,7 @@ export function encoder () {
         processHeader(key, headers[key]);
       }
     }
-    function processHeader (key, value) {
+    function processHeader(key, value) {
       let lowerKey = key.toLowerCase();
       if (lowerKey === 'transfer-encoding') {
         chunkedEncoding = value.toLowerCase() === 'chunked';
@@ -102,7 +102,7 @@ export function encoder () {
     return head.join('');
   }
 
-  function encodeRaw (item) {
+  function encodeRaw(item) {
     if (typeof item !== 'string') {
       mode = encodeHead;
       return encodeHead(item);
@@ -110,7 +110,7 @@ export function encoder () {
     return item;
   }
 
-  function encodeChunked (item) {
+  function encodeChunked(item) {
     if (typeof item !== 'string') {
       mode = encodeHead;
       let extra = encodeHead(item);
@@ -127,19 +127,19 @@ export function encoder () {
   }
 
   mode = encodeHead;
-  function encode (item) {
+  function encode(item) {
     return mode(item);
   }
   return encode;
 }
 
-export function decoder () {
+export function decoder() {
   // This decoder is somewhat stateful with 5 different parsing states.
   let mode; // state variable that points to various decoders
   let bytesLeft; // For counted decoder
 
   // This state is for decoding the status line and headers.
-  function decodeHead (chunk, offset) {
+  function decodeHead(chunk, offset) {
     if (!chunk || chunk.length <= offset) return;
 
     // First make sure we have all the head before continuing
@@ -223,17 +223,18 @@ export function decoder () {
   }
 
   // This is used for inserting a single empty string into the output string for known empty bodies
-  function decodeEmpty (chunk, offset) {
+  function decodeEmpty(chunk, offset) {
     mode = decodeHead;
     return [new Uint8Array(0), offset];
   }
 
-  function decodeRaw (chunk, offset) {
+  function decodeRaw(chunk, offset) {
     if (!chunk || chunk.length <= offset || !chunk.length) return;
     return [chunk.slice(offset), chunk.length];
   }
 
-  function decodeChunked (chunk, offset) {
+  function decodeChunked(chunk, offset) {
+    if (!chunk) return;
     // Make sure we have at least the length header
     let index = indexOf(chunk, '\r\n', offset);
     if (index < 0) return;
@@ -256,7 +257,7 @@ export function decoder () {
     return [chunk.slice(start, end), end + 2];
   }
 
-  function decodeCounted (chunk, offset) {
+  function decodeCounted(chunk, offset) {
     if (bytesLeft === 0) {
       mode = decodeEmpty;
       return mode(chunk, offset);
@@ -278,7 +279,7 @@ export function decoder () {
 
   // Switch between states by changing which decoder mode points to
   mode = decodeHead;
-  function decode (chunk, offset) {
+  function decode(chunk, offset) {
     return mode(chunk, offset);
   }
   return decode;
