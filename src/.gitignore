@@ -1,0 +1,9 @@
+*.d.ts
+*.js.map
+/node/
+/fs-promised.*
+/fs-uv.*
+/TextDecoder.*
+/TextEncoder.*
+/utils2.*
+/timers.*

@@ -1,6 +1,7 @@
 /* global globalThis */
 
 import "./console.js";
+import process from "./node/process.js";
 
 import {
   setTimeout,
@@ -16,7 +17,7 @@ import {
   TextEncoder,
   XMLHttpRequest,
   WebSocket,
-  Storage
+  Storage,
 } from './index.js';
 
 globalThis.setTimeout = setTimeout;
@@ -35,4 +36,7 @@ globalThis.WebSocket = WebSocket;
 globalThis.localStorage = new Storage();
 
 globalThis.window = globalThis;
+globalThis.global = globalThis;
+
+globalThis.process = process;
 
