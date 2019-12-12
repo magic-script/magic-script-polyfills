@@ -19,6 +19,5 @@ console.log = (...args) => {
         print(line);
     }
 
-    p(...args);
     return consoleLog.call(console, ...args);
 }
