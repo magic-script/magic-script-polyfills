@@ -3,7 +3,7 @@ const console = globalThis.console;
 const consoleLog = console.log
 console.log = (...args) => {
     const TERMINAL_WIDTH = getWidth();
-    let output = args.map((arg) => prettyPrint(arg, 5)).join(" ");
+    let output = args.map((arg) => typeof arg === 'string' ? arg : prettyPrint(arg, 5)).join(" ");
     const stack = new Error().stack;
     if (stack) {
         const line = stack.split("\n")[2];
