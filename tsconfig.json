@@ -1,0 +1,20 @@
+{
+    "compilerOptions": {
+        "target": "esnext",
+        "lib": [
+            "ESNext"
+        ],
+        "noImplicitAny": true,
+        "noImplicitThis": true,
+        "noImplicitReturns": true,
+        "noUnusedParameters": true,
+        "noUnusedLocals": true,
+        "declaration": true,
+        "outDir": "src",
+        "typeRoots": [
+            "./node_modules/magic-script-typings",
+            "./node_modules/@types"
+        ],
+    },
+    "compileOnSave": true
+}

@@ -1,6 +1,2 @@
-wscat
-test.txt
-latest.zip
-
-#VS Code
-.history
+/node_modules/
+/.vscode/
