@@ -6,4 +6,7 @@ export default {
     cwd() {
         return fs.realpath(new Fs(), ".");
     },
+    nextTick(fn: () => void) {
+        Promise.resolve().then(fn);
+    },
 };
