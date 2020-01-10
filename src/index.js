@@ -12,3 +12,4 @@ export { TextEncoder } from './text-encoder.js';
 export { XMLHttpRequest } from './xhr.js';
 export { Storage } from './localStorage.js';
 export { WebSocket } from './websocket.js';
+export { crypto } from './crypto.js'
