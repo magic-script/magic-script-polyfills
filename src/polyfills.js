@@ -2,7 +2,6 @@
 
 import "./console.js";
 import process from "./node/process.js";
-import Buffer from "./node/buffer.js";
 
 import {
   clearImmediate,
