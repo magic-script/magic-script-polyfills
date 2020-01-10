@@ -2,41 +2,45 @@
 
 import "./console.js";
 import process from "./node/process.js";
+import Buffer from "./node/buffer.js";
 
 import {
-  setTimeout,
-  clearTimeout,
-  setInterval,
-  clearInterval,
-  setImmediate,
   clearImmediate,
+  clearInterval,
+  clearTimeout,
+  crypto,
   fetch,
   Headers,
   Request,
   Response,
-  TextEncoder,
-  XMLHttpRequest,
-  WebSocket,
+  setImmediate,
+  setInterval,
+  setTimeout,
   Storage,
+  TextEncoder,
+  WebSocket,
+  XMLHttpRequest,
 } from './index.js';
 
-globalThis.setTimeout = setTimeout;
-globalThis.clearTimeout = clearTimeout;
-globalThis.setInterval = setInterval;
-globalThis.clearInterval = clearInterval;
-globalThis.setImmediate = setImmediate;
+// Browser globals
 globalThis.clearImmediate = clearImmediate;
+globalThis.clearInterval = clearInterval;
+globalThis.clearTimeout = clearTimeout;
+globalThis.crypto = crypto;
 globalThis.fetch = fetch;
 globalThis.Headers = Headers;
+globalThis.localStorage = new Storage();
 globalThis.Request = Request;
 globalThis.Response = Response;
+globalThis.setImmediate = setImmediate;
+globalThis.setInterval = setInterval;
+globalThis.setTimeout = setTimeout;
 globalThis.TextEncoder = TextEncoder;
-globalThis.XMLHttpRequest = XMLHttpRequest;
 globalThis.WebSocket = WebSocket;
-globalThis.localStorage = new Storage();
-
 globalThis.window = globalThis;
-globalThis.global = globalThis;
+globalThis.XMLHttpRequest = XMLHttpRequest;
 
+// node.js globals
+globalThis.global = globalThis;
 globalThis.process = process;
 
