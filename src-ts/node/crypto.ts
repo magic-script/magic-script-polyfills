@@ -1,5 +1,6 @@
+import { getRandomValues } from "../crypto.js";
 import { close, open, read } from "../fs-promised.js";
-import { closeSync, OnResult, openSync, readSync } from "../fs-uv.js";
+import { OnResult } from "../fs-uv.js";
 
 export function createHash() {
     throw new Error("TODO: Implement crypto.createHash for node");
@@ -12,7 +13,7 @@ export function randomBytes(size: number, callback?: OnResult<Uint8Array>): Uint
     if (callback) {
         randomBytesCallback(buffer, callback);
     } else {
-        return randomBytesSync(buffer);
+        return getRandomValues(buffer);
     }
 }
 
@@ -30,18 +31,8 @@ async function randomBytesPromised(buffer: Uint8Array): Promise<Uint8Array> {
     return buffer;
 }
 
-function randomBytesSync(buffer: Uint8Array): Uint8Array {
-    const fd = openSync("/dev/urandom", "r", 0o400);
-    try {
-        readSync(fd, buffer, 0);
-    } finally {
-        closeSync(fd);
-    }
-    return buffer;
-}
-
 export function randomFillSync(buffer: Uint8Array, rawOffset?: number, rawSize?: number): Uint8Array {
-    randomBytesSync(normalizeOffsetBuffer(buffer, rawOffset, rawSize));
+    getRandomValues(normalizeOffsetBuffer(buffer, rawOffset, rawSize));
     return buffer;
 }
 
