@@ -10,6 +10,6 @@ export {
 export { fetch, Headers, Request, Response } from './fetch.js';
 export { TextEncoder } from './text-encoder.js';
 export { XMLHttpRequest } from './xhr.js';
-export { Storage } from './localStorage.js';
+export { Storage } from './Storage.js';
 export { WebSocket } from './websocket.js';
 export { crypto } from './crypto.js'
