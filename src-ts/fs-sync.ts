@@ -1,4 +1,4 @@
-import { Flags, Fs, fs } from "uv";
+import { Flags } from "uv";
 
 import { closeSync, openSync, readSync } from "./fs-uv.js";
 

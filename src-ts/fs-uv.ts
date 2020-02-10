@@ -63,6 +63,15 @@ export function realpath(path: string, onPath: OnResult<string>): void {
     fs.realpath(new Fs(), path, onPath);
 }
 
+export function mkdir(path: string, mode:number, onMake: OnResult<void>): void {
+    fs.mkdir(new Fs(), path, mode, onMake);
+}
+
+export function mkdirSync(path: string, mode:number): void {
+    fs.mkdir(new Fs(), path, mode);
+}
+
+
 /**
  * Workaround a bug in libuv bindings in Lumin OS 0.98.0.
  * This ensures that the backing array buffer is not larger than the view.
