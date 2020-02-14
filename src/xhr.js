@@ -38,9 +38,16 @@ export class XMLHttpRequest extends Evented {
     this.headers[name] = value;
   }
 
-  // Returns all headers
+  /**
+   * A ByteString representing all of the response's headers (except those 
+   * whose field name is Set-Cookie or Set-Cookie2) separated by CRLF, or null
+   * if no response has been received.
+   */
   getAllResponseHeaders() {
-    return this.responseHeaders;
+    return this.responseHeaders ? Object.keys(this.responseHeaders)
+      .filter(key => key.toLowerCase() !== 'set-cookie' && key.toLowerCase() !== 'set-cookie2')
+      .map(key => `${key}: ${this.responseHeaders[key]}`)
+      .join('\r\n') : null;
   }
 
   /**
