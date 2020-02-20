@@ -11,3 +11,4 @@
 /crypto.*
 /Storage.*
 /fs-sync.*
+/evented.*

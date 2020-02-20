@@ -5,7 +5,7 @@
   "module": "src/polyfills.js",
   "dependencies": {},
   "devDependencies": {
-    "magic-script-typings": "^1.6.2",
+    "magic-script-typings": "^1.6.4",
     "typescript": "^3.7.3"
   },
   "scripts": {
