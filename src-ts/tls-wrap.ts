@@ -1,14 +1,15 @@
 import { Ssl } from 'ssl';
 import { assert } from './assert.js';
+import { IStream } from "./socket-wrap.js";
 
 // Input read/write
 // read() -> Promise<ArrayBuffer|null>
 // write(ArrayBuffer|null) -> Promise
-export async function tlsWrap ({ read: innerRead, write: innerWrite, close: innerClose, ...rest }, hostname) {
+export async function tlsWrap({ read: innerRead, write: innerWrite, close: innerClose, ...rest }: IStream, hostname?: string): Promise<IStream> {
   assert(innerRead);
   assert(innerWrite);
-  read.inner = innerRead;
-  write.inner = innerWrite;
+  // read.inner = innerRead;
+  // write.inner = innerWrite;
 
   let ssl = new Ssl();
   if (hostname) ssl.setHostname(hostname);
@@ -16,7 +17,7 @@ export async function tlsWrap ({ read: innerRead, write: innerWrite, close: inne
 
   return { read, write, close, ...rest };
 
-  async function handshake () {
+  async function handshake() {
     let status;
     while ((status = ssl.getError(ssl.doHandshake())) !== 'SSL_ERROR_NONE') {
       if (status === 'SSL_ERROR_WANT_READ') {
@@ -40,22 +41,22 @@ export async function tlsWrap ({ read: innerRead, write: innerWrite, close: inne
     }
   }
 
-  async function close () {
-    if (ssl.shutdown) {
-      ssl.shutdown();
+  async function close() {
+    if (ssl.sslShutdown) {
+      ssl.sslShutdown();
     }
     ssl = null;
     await innerClose();
   }
 
-  async function flush () {
+  async function flush() {
     let data;
     while ((data = ssl.bioRead())) {
       if (data) await innerWrite(data);
     }
   }
 
-  async function read () {
+  async function read(): Promise<ArrayBuffer | void> {
     let buffer = new ArrayBuffer(16384);
     let result;
     while ((result = ssl.sslRead(buffer))) {
@@ -78,14 +79,14 @@ export async function tlsWrap ({ read: innerRead, write: innerWrite, close: inne
     }
   }
 
-  async function write (data) {
+  async function write(data?: ArrayBuffer) {
     let shouldShutdown = false;
     if (data) {
       ssl.sslWrite(data);
     } else {
       shouldShutdown = true;
-      if (ssl.shutdown) {
-        ssl.shutdown();
+      if (ssl.sslShutdown) {
+        ssl.sslShutdown();
       }
     }
     while ((data = ssl.bioRead())) {

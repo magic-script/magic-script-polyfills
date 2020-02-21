@@ -16,7 +16,7 @@ export class XMLHttpRequest extends Evented {
   }
 
   // Stores method and url
-  open(method, url) {
+  open(method: string, url: string) {
     this.readyState = OPENED;
     this.method = method;
     this.url = url;
@@ -34,7 +34,7 @@ export class XMLHttpRequest extends Evented {
   }
 
   // Append header to headers object
-  setRequestHeader(name, value) {
+  setRequestHeader(name: string, value: string) {
     this.headers[name] = value;
   }
 
@@ -54,7 +54,7 @@ export class XMLHttpRequest extends Evented {
    * Uses fetch to fire request
    * Fires both load and readystatechange so registered components know data was loaded
    */
-  send(body) {
+  send(body: any) {
     fetch(this.url, { method: this.method, body })
       .then(res => {
         this.readyState = DONE;
@@ -86,7 +86,7 @@ export class XMLHttpRequest extends Evented {
   }
 
   // Get response header by key
-  getResponseHeader(key) {
+  getResponseHeader(key: string): string | null {
     return this.responseHeaders.get(key);
   }
 }

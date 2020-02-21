@@ -8,31 +8,37 @@ import { Evented } from './evented.js';
 import { Headers } from './headers.js';
 import { encodeRaw, decodeRaw, acceptKey } from './websocket-codec.js';
 
-let writeKey = Symbol('Websocket::Write');
-let closedKey = Symbol('Websocket::Closed');
-let streamKey = Symbol('Websocket::Stream');
+const writeKey = Symbol('Websocket::Write');
+const closedKey = Symbol('Websocket::Closed');
+const streamKey = Symbol('Websocket::Stream');
 
 export class WebSocket extends Evented {
+  private [writeKey]: any;
+  private [closedKey]: any;
+  private [streamKey]: any;
+  static CONNECTING = 0;
+  static OPEN = 1;
+  static CLOSED = 2;
+  static CLOSING = 3;
   /**
    * Establish a websocket client connection.
-   * @param {string} url the ws(s) url of the remote server
-   * @param {string|Array<string>} protocols optional websocket subprotocol(s)
+   * @param url the ws(s) url of the remote server
+   * @param protocols optional websocket subprotocol(s)
    */
-  constructor (url, protocols) {
+  constructor(url: string, protocols?: string[]) {
     const urlParts = url.match(/^ws(s?):\/\/([^:/]+)(:[0-9]+)?(\/[^?#]*)?([?][^#]*)?(#.*)?$/);
     if (!urlParts) {
       throw new Error('Not a valid websocket URL: ' + url);
     }
     const [, secure, host, port, path, query] = urlParts;
     super();
-    this.doHandshake({ secure, host, port, path, query }, protocols)
+    this.doHandshake(secure, host, port, path, query, protocols)
       .catch(err => this.emit('error', err));
   }
 
-  async doHandshake ({ secure = false, host = 'localhost', port, path, query } = {}, protocols) {
-    secure = !!secure;
+  async doHandshake(secure: string, host: string, rawPort: string, path: string, query: string, protocols?: string[] | string) {
     const defaultPort = secure ? 443 : 80;
-    port = port ? parseInt(port.substr(1), 10) : defaultPort;
+    const port = rawPort ? parseInt(rawPort.substr(1), 10) : defaultPort;
     path = path || '/';
     query = query || '';
     protocols = protocols ? Array.isArray(protocols) ? protocols : [protocols] : [];
@@ -46,11 +52,11 @@ export class WebSocket extends Evented {
       enumerable: true
     });
 
-    let key = new Uint8Array(21);
+    let keyBuf = new Uint8Array(21);
     for (let i = 0; i < 21; i++) {
-      key[i] = Math.random() * 256;
+      keyBuf[i] = Math.random() * 256;
     }
-    key = binToB64(key);
+    const key = binToB64(keyBuf);
 
     const headers = [
       'Host', origin,
@@ -105,13 +111,13 @@ export class WebSocket extends Evented {
     this.readyState = WebSocket.OPEN;
     this.emit('open');
 
-    function makeMessageEvent(data) {
+    function makeMessageEvent(data: Uint8Array) {
       return {
         data,
         origin: '',
         lastEventId: '',
-        source: null,
-        ports: []
+        source: null as string | null,
+        ports: [] as number[]
       }
     }
 
@@ -132,7 +138,7 @@ export class WebSocket extends Evented {
           if (!this[closedKey]) this.close();
           break;
         case 9: // ping
-          this[writeKey]({ opcode: 10, mask: true }).catch(err => this.emit('error', err));
+          this[writeKey]({ opcode: 10, mask: true }).catch((err: Error) => this.emit('error', err));
           break;
       }
     }
@@ -142,17 +148,17 @@ export class WebSocket extends Evented {
     this.emit('close');
   }
 
-  close (payload = '') {
+  close(payload = '') {
     if (this.readyState !== WebSocket.OPEN) {
       throw new Error('Attempt to close Websocket when not open');
     }
     this.readyState = WebSocket.CLOSING;
     this[closedKey] = true;
-    this[writeKey]({ opcode: 8, mask: true, payload }).catch(err => this.emit('error', err));
+    this[writeKey]({ opcode: 8, mask: true, payload }).catch((err: Error) => this.emit('error', err));
     this[writeKey]();
   }
 
-  send (message) {
+  send(message: string | Uint8Array | ArrayBuffer) {
     if (this.readyState !== WebSocket.OPEN) {
       throw new Error('Attempt to send Websocket frame when not open');
     }
@@ -172,12 +178,7 @@ export class WebSocket extends Evented {
     } else {
       throw new TypeError('Expected string or binary value in websocket send');
     }
-    this[writeKey](frame).catch(err => this.emit('error', err));
+    this[writeKey](frame).catch((err: Error) => this.emit('error', err));
   }
 }
 WebSocket.prototype.binaryType = 'arraybuffer';
-
-WebSocket.CONNECTING = 0;
-WebSocket.OPEN = 1;
-WebSocket.CLOSING = 2;
-WebSocket.CLOSED = 3;

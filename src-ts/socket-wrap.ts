@@ -1,9 +1,20 @@
-import { Write, Shutdown } from 'uv';
+import { Write, Shutdown, Stream } from 'uv';
 import { assert } from './assert.js';
+
+type Out = { err?: Error, val?: ArrayBuffer }
+type In = { resolve: (val?: ArrayBuffer) => void, reject: (err: Error) => void };
+type Item = Out | In;
+
+export interface IStream {
+  read: () => Promise<ArrayBuffer | undefined>,
+  write: (val?: ArrayBuffer) => Promise<void>,
+  close: () => Promise<void>,
+  socket: Stream
+};
 
 // Socket is a libuv socket class (like a TCP socket)
 // Output is promise based read/write functions.
-export function socketWrap (socket) {
+export function socketWrap(socket: Stream): IStream {
   assert(socket && socket.write && socket.shutdown && socket.readStart && socket.readStop && socket.close, 'Missing stream functions');
   let writeClosed = false;
   let readClosed = false;
@@ -11,13 +22,13 @@ export function socketWrap (socket) {
   let reading = false;
   // If writer > reader, there is data to be read.
   // if reader > writer, there is data required.
-  let queue = [];
+  let queue: Item[] = [];
   let reader = 0;
   let writer = 0;
 
   return { read, write, socket, close };
 
-  async function close () {
+  async function close() {
     readClosed = true;
     if (!writeClosed) {
       await write();
@@ -26,17 +37,17 @@ export function socketWrap (socket) {
     }
   }
 
-  function check () {
+  function check() {
     if (readClosed && writeClosed && !socketClosed) {
       socketClosed = true;
       socket.close();
     }
   }
 
-  function onData (err, val) {
+  function onData(err: Error, val?: ArrayBuffer) {
     // If there is a pending reader, give it the data right away.
     if (reader > writer) {
-      let { resolve, reject } = queue[writer];
+      let { resolve, reject } = queue[writer] as In
       queue[writer++] = undefined;
       if (err) return reject(err);
       readClosed = !val;
@@ -53,11 +64,11 @@ export function socketWrap (socket) {
     queue[writer++] = { err, val };
   }
 
-  async function read () {
+  async function read(): Promise<ArrayBuffer | undefined> {
     if (socketClosed || readClosed) throw new Error('Cannot read from closed socket');
     // If there is pending data, return it right away.
     if (writer > reader) {
-      let { err, val } = queue[reader];
+      let { err, val } = queue[reader] as Out;
       queue[reader++] = undefined;
       if (err) throw err;
       return val;
@@ -76,7 +87,7 @@ export function socketWrap (socket) {
   }
 
   // write(ArrayBuffer | null) -> Promise
-  function write (buffer) {
+  function write(buffer?: ArrayBuffer): Promise<void> {
     return new Promise((resolve, reject) => {
       if (socketClosed || writeClosed) throw new Error('Cannot write to closed socket');
       if (buffer) {

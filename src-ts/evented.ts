@@ -25,7 +25,7 @@ export class Evented {
     list.splice(index, 1);
   }
 
-  emit(name: string, val: any): void {
+  emit(name: string, val?: any): void {
     const key = `on${name}`;
     let handlers = [];
     if (this[key]) handlers.push(this[key]);

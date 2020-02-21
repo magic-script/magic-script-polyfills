@@ -1,7 +1,6 @@
-/// <reference path="../lib.uv.d.ts"/>
 import { Getaddrinfo, getaddrinfo, Connect, Tcp } from 'uv';
 
-function makeCallback () {
+function makeCallback() {
   let callback, promise;
   promise = new Promise((resolve, reject) => {
     callback = (err, val) => err ? reject(err) : resolve(val);
@@ -12,7 +11,7 @@ function makeCallback () {
 
 const cache = {};
 
-export async function resolve (host, service) {
+export async function resolve(host, service) {
   // Resolve IP address and TCP port
   const key = host + service;
   if (!cache[key]) {
@@ -23,7 +22,7 @@ export async function resolve (host, service) {
   return cache[key];
 }
 
-export async function connect (host, service) {
+export async function connect(host, service) {
   const { ip, port } = await resolve(host, service);
   // Connect to server
   let socket = new Tcp();
