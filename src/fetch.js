@@ -2,12 +2,14 @@ import { guess } from './mime.js';
 import { socketWrap } from './socket-wrap.js';
 import { tlsWrap } from './tls-wrap.js';
 import { codecWrap } from './codec-wrap.js';
-import { decoder, encoder } from './http-codec.js';
+import { decoder, encoder, STATUS_CODES } from './http-codec.js';
 import { readFileStream, writeFileStream, prepareBody, expandBody } from './fs.js';
 import { connect } from './tcp.js';
 import { Headers } from './headers.js';
 import { resolveUrl } from './resolve.js';
 import { consume, binToStr } from './utils.js';
+import { mkdirSync } from "./fs-uv.js";
+
 export { Headers };
 
 export let fetch = makeFetch({
@@ -15,6 +17,18 @@ export let fetch = makeFetch({
   http: httpRequest,
   https: httpRequest
 });
+// Set to a string path to enable caching
+fetch.cacheBase = undefined;
+fetch.setCacheFolder = (basePath) => {
+  if (basePath) {
+    try {
+      mkdirSync(basePath, 0o700);
+    } catch (err) {
+      if (!/^EEXIST/.test(err.message)) { throw err; }
+    }
+  }
+  fetch.cacheBase = basePath;
+}
 
 function makeFetch(protocols) {
   return async function fetch(input, init) {
@@ -35,7 +49,7 @@ function makeFetch(protocols) {
 const bodyPromise = Symbol('arrayBufferPromise');
 export class Response {
   constructor(body, init = {}) {
-    let { url, status = 200, statusText = 'OK', redirected = false } = init;
+    let { url, status = 200, statusText = STATUS_CODES[status] || 'UNKNOWN', redirected = false } = init;
     let headers = new Headers(init.headers);
     Object.defineProperties(this, {
       url: { value: url, enumerable: true, writable: false },
@@ -70,15 +84,16 @@ export class Response {
 export class Request {
   constructor(input, init = {}) {
     let [url, meta] = normalizeUrl(input);
-    let { method = 'GET', body, redirect = 'follow' } = init;
+    let { method = 'GET', body, redirect = 'follow', cache = fetch.cacheBase ? 'default' : 'no-store' } = init;
     let headers = new Headers(init.headers);
     Object.defineProperties(this, {
       meta: { value: meta, writable: false },
-      url: { value: url, enumerable: true, writable: false },
-      method: { value: method, enumerable: true, writable: false },
-      headers: { value: headers, enumerable: true, writable: false },
       body: { value: prepareBody(body), enumerable: true, writable: false },
-      redirect: { value: redirect, enumerable: true, writable: false }
+      cache: { value: cache, enumerable: true, writable: false },
+      headers: { value: headers, enumerable: true, writable: false },
+      method: { value: method, enumerable: true, writable: false },
+      redirect: { value: redirect, enumerable: true, writable: false },
+      url: { value: url, enumerable: true, writable: false },
     });
   }
 }
@@ -114,7 +129,8 @@ function normalizeUrl(input) {
       throw new TypeError(`Invalid ${protocol} url: '${input}'`);
     }
     let [, host, portStr, path, query, hash] = match;
-    path = pathJoin('/', path);
+    const trailing = path.length > 1 && path.substr(path.length - 1) === '/';
+    path = pathJoin('/', path) + (trailing ? '/' : '');
     let defaultPort = protocol === 'http' ? 80 : 443;
     let port = portStr ? parseInt(portStr.substr(1), 10) : defaultPort;
     let hostname = `${host}${port === defaultPort ? '' : ':' + port}`;
@@ -136,13 +152,133 @@ function normalizeUrl(input) {
   throw new TypeError(`Unsupported protocol: '${protocol}'`);
 }
 
+const cacheConfig = {
+  'default': { useCache: true, conditionalRequest: true, updateCache: true },
+  'no-store': {},
+  'reload': { updateCache: true },
+  'no-cache': { conditionalRequest: true, updateCache: true },
+  'force-cache': { useCache: true, allowStale: true, updateCache: true },
+  'only-if-cached': { useCache: true, allowStale: true, skipNet: true },
+};
+
+/**
+ * @type {{[key:string]:Promise<Response>}}
+ */
+const concurrentRequests = {};
+
+/**
+ * Share concurrent requests/responses for the same resource.
+ * @param {string} cacheKey 
+ * @param {()=>Promise<Response>} next
+ * @returns {Promise<Response>}
+ */
+async function checkConcurrent(cacheKey, next) {
+  let current = concurrentRequests[cacheKey];
+  if (!current) {
+    current = next();
+    concurrentRequests[cacheKey] = current;
+    setTimeout(() => {
+      if (concurrentRequests[cacheKey] === current) {
+        delete concurrentRequests[cacheKey];
+      }
+    }, 1000).unref();
+    return current;
+  }
+  return current;
+}
+
 /**
  * Perform an HTTP Request
  * @param {Request} req
+ * @param {number} redirected
  * @returns {Response}
  */
 async function httpRequest(req, redirected = 0) {
-  let { protocol, host, port, hostname, pathname } = req.meta;
+  // For non GET requests, skip all connection pooling and caching logic.
+  if (req.method !== "GET") {
+    return realHttpRequest(req, redirected);
+  }
+
+  const { protocol, host, port, pathname } = req.meta;
+  const cacheKey = `${fetch.cacheBase}/${protocol}_${host}_${port}${pathname.replace(/_/g, '__').replace(/\//g, '_')}`;
+
+  // Combine concurrent requests for the same resource.
+  return checkConcurrent(cacheKey, async () => {
+
+    const config = cacheConfig[req.cache];
+    const { useCache, allowStale, conditionalRequest, updateCache, skipNet } = config;
+
+    const metaPath = `${cacheKey}.json`;
+    const bodyPath = `${cacheKey}`;
+
+    if (useCache) {
+      const metaBody = await readFileStream(metaPath).catch(err => {
+        if (!/^ENOENT:/.test(err.message)) throw err;
+      });
+      if (metaBody) {
+        const meta = JSON.parse(binToStr(await consume(metaBody)));
+        let fresh = Boolean(allowStale);
+
+        if (!allowStale) {
+          const now = Date.now();
+          const age = metaBody.stat.mtime - now;
+          // console.log("TODO: is stale?", metaPath, age, meta);
+          fresh = false;
+        }
+
+        if (!fresh && conditionalRequest) {
+          let condition = {};
+          const headers = new Headers(meta.headers);
+          const etag = headers.get('ETag');
+          const date = headers.get('Last-Modified') || headers.get('Date');
+          if (etag || date) {
+            if (date) req.headers.set('If-Modified-Since', date);
+            if (etag) req.headers.set('If-None-Match', etag);
+            const res = await realHttpRequest(req);
+            fresh = res.status === 304;
+          }
+        }
+
+        if (fresh) {
+          const body = await readFileStream(bodyPath);
+          const res = new Response(body, meta);
+          res.headers.set('Via', '1.1 fetch-cache');
+          if (body) res.cacheFile = Promise.resolve(bodyPath);
+          return res;
+        }
+
+
+      }
+    }
+
+
+    // If we're supposed to skip the net, we need to bail here.
+    if (skipNet) {
+      return new Response(undefined, {
+        url: req.url,
+        status: 504
+      });
+    }
+
+    // Make a real http request.
+    const res = await realHttpRequest(req, redirected);
+
+    if (updateCache && res.status === 200 && /^http/.test(res.url)) {
+      // TODO: make this cache update atomic!
+      // Otherwise there be dragons here with subtle race conditions.
+      writeFileStream(metaPath, JSON.stringify(res, null, 2) + "\n");
+      if (res.body) {
+        res.cacheFile = writeFileStream(bodyPath, res.arrayBuffer()).then(() => bodyPath);
+      }
+    }
+
+    return res;
+  });
+}
+
+async function realHttpRequest(req, redirected = 0) {
+  const { protocol, host, port, hostname, pathname } = req.meta;
+
   let stream = socketWrap(await connect(host, port));
   if (protocol === 'https') {
     stream = await tlsWrap(stream, host);
@@ -168,6 +304,8 @@ async function httpRequest(req, redirected = 0) {
     req.headers.set('Content-Length', '0');
   }
 
+  // console.log(req);
+
   let headers = [];
   for (let [key, value] of req.headers) {
     headers.push(key, value);
@@ -185,17 +323,24 @@ async function httpRequest(req, redirected = 0) {
 
   let resHead = await read();
 
-  async function next() {
-    let part = await read();
-    if (!part || part.length === 0) {
-      await stream.close();
-      return { done: true };
+  let used = false;
+  let body = {
+    [Symbol.asyncIterator]() {
+      if (used) throw new Error("TCP streams are not reusable.");
+      used = true;
+      return this;
+    },
+    async next() {
+      const part = await read();
+      if (!part || part.length === 0) {
+        await stream.close();
+        return { done: true };
+      }
+      return {
+        done: false, value: part.buffer
+      };
     }
-    return {
-      done: false, value: part.buffer
-    };
-  }
-  let body = { [Symbol.asyncIterator]() { return this; }, next };
+  };
   let resHeaders = new Headers(resHead.headers);
 
   let res = new Response(body, {
@@ -205,6 +350,9 @@ async function httpRequest(req, redirected = 0) {
     headers: resHeaders,
     redirected: !!redirected
   });
+
+  // console.log(res);
+
 
   if (res.status >= 300 && res.status < 400 && res.headers.Location) {
     if (req.redirect === 'follow') {
@@ -225,20 +373,33 @@ async function httpRequest(req, redirected = 0) {
   return res;
 }
 
+
 /**
  * Load a local file as if it was an HTTP request.
  * @param {Request} req
  * @returns {Response}
  */
 async function fileRequest(req) {
+  // console.log("FILE REQUEST", req)
   let { meta: { path }, method, body } = req;
   if (method === 'GET') {
-    let body = await readFileStream(path);
-    return new Response(body, {
-      headers: {
-        'Content-Type': guess(path)
-      }
+    let body = await readFileStream(path).catch(err => {
+      if (!/^ENOENT:/.test(err.message)) throw err;
     });
+    return body ?
+      new Response(body, {
+        url: req.url,
+        status: 200,
+        headers: {
+          'Content-Type': guess(path)
+        }
+      }) : new Response(`No such file: '${path}'\n`, {
+        url: req.url,
+        status: 404,
+        headers: {
+          'Content-Type': 'text/plain'
+        }
+      });
   }
   if (method === 'PUT' && body) {
     await writeFileStream(path, body);

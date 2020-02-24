@@ -19,14 +19,14 @@ export let scandir = (path, flags = 0) =>
   new Promise((resolve, reject) =>
     fs.scandir(new Fs(), path, flags, (err, req) =>
       err ? reject(err) : resolve({
-        next () {
+        next() {
           let entry = fs.scandirNext(req);
           return {
             done: !entry,
             value: entry
           };
         },
-        [Symbol.iterator] () { return this; }
+        [Symbol.iterator]() { return this; }
       })
     )
   );
@@ -44,6 +44,20 @@ export let chmod = (path, mode) => acall(fs.chmod, path, mode);
  * @returns {Promise<{mode:number,uid:number,gid:number,size:number,type:string}>}
  */
 export let stat = (path) => acall(fs.stat, path);
+
+/**
+ *
+ * @param {string} path
+ * @returns {Promise<{mode:number,uid:number,gid:number,size:number,type:string}>}
+ */
+export let lstat = (path) => acall(fs.lstat, path);
+
+/**
+ *
+ * @param {number} fd
+ * @returns {Promise<{mode:number,uid:number,gid:number,size:number,type:string}>}
+ */
+export let fstat = (fd) => acall(fs.fstat, fd);
 
 /**
  * Open a file, getting a file descriptor.
@@ -89,7 +103,7 @@ export let close = (fd) => acall(fs.close, fd);
  * @param {IterableIterator<Promise<ArrayBuffer>>} stream
  * @param {{flags:string,mode:number}} options
  */
-export async function writeFileStream (path, stream, options = {}) {
+export async function writeFileStream(path, stream, options = {}) {
   let { flags = 'w', mode = parseInt('644', 8) } = options;
   let fd = await open(path, flags, mode);
   let offset = 0;
@@ -109,17 +123,23 @@ export async function writeFileStream (path, stream, options = {}) {
  * @param {{flags:string,mode:number,offset:number,end:number:chunkSize:number}} options
  * @returns {IterableIterator<Promise<ArrayBuffer>>}
  */
-export async function readFileStream (path, options = {}) {
+export async function readFileStream(path, options = {}) {
   let { flags = 'r', mode = parseInt('644', 8), offset = 0, end = -1, chunkSize = 128 * 1024 } = options;
   let buf = new ArrayBuffer(chunkSize);
 
   let fd = await open(path, flags, mode);
+  let used = false;
   return {
-    [Symbol.asyncIterator] () { return this; },
+    stat: await fstat(fd),
+    [Symbol.asyncIterator]() {
+      if (used) throw new Error("File streams are not reusable");
+      used = true;
+      return this;
+    },
     next
   };
 
-  async function next () {
+  async function next() {
     if (!fd) throw new Error('Can\'t read from closed stream');
     try {
       let bytesRead = await read(fd, buf, offset);
@@ -138,7 +158,7 @@ export async function readFileStream (path, options = {}) {
     }
   }
 
-  async function cleanup () {
+  async function cleanup() {
     if (!fd) return;
     await close(fd);
     fd = null;
@@ -147,7 +167,7 @@ export async function readFileStream (path, options = {}) {
 
 // Do simple body cleanup rules that don't cause unneeded buffering in memory.
 // This means we can get total length for string, Uint8Array, or ArrayBuffer
-export function prepareBody (data) {
+export function prepareBody(data) {
   // Convert strings into UTF8-encoded Uint8Arrays
   if (typeof data === 'string') {
     return new TextEncoder().encode(data);
@@ -155,7 +175,7 @@ export function prepareBody (data) {
   return data;
 }
 
-export async function expandBody (data, onBuffer) {
+export async function expandBody(data, onBuffer) {
   if (typeof data.then === 'function') {
     data = await data;
   }

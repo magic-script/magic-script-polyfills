@@ -2,6 +2,7 @@
 
 import "./console.js";
 import process from "./node/process.js";
+import { pathJoin } from "./utils2.js";
 
 import {
   clearImmediate,
@@ -20,6 +21,7 @@ import {
   WebSocket,
   XMLHttpRequest,
 } from './index.js';
+import { on as onWritablePath } from "./writable-path.js";
 
 // Browser globals
 globalThis.clearImmediate = clearImmediate;
@@ -43,3 +45,7 @@ globalThis.XMLHttpRequest = XMLHttpRequest;
 globalThis.global = globalThis;
 globalThis.process = process;
 
+onWritablePath((newPath) => {
+  globalThis.localStorage.updateBase(pathJoin(newPath, 'localstorage'));
+  fetch.setCacheFolder(pathJoin(newPath, 'fetchcache'));
+})
