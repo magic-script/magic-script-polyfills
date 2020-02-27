@@ -30,16 +30,15 @@ fetch.setCacheFolder = (basePath) => {
   fetch.cacheBase = basePath;
 }
 
+/**
+ *
+ * @param {{[key:name]:(req:Request)=>Promise<Response>}} protocols
+ */
 function makeFetch(protocols) {
   return async function fetch(input, init) {
-    let req;
-    if (input instanceof Request) {
-      // TODO: should we apply `init` to the request?
-      req = input;
-    } else {
-      req = new Request(input, init);
-    }
+    let req = new Request(input, init);
     let protocol = req.meta.protocol;
+    /** @type {((req:Request)=>Promise<Response>)|undefined} */
     let handler = protocols[protocol];
     if (handler) return handler(req);
     throw new Error(`Unknown protocol: ${protocol}`);
@@ -83,6 +82,7 @@ export class Response {
 
 export class Request {
   constructor(input, init = {}) {
+    if (input instanceof Request) return input;
     let [url, meta] = normalizeUrl(input);
     let { method = 'GET', body, redirect = 'follow', cache = fetch.cacheBase ? 'default' : 'no-store' } = init;
     let headers = new Headers(init.headers);
@@ -168,22 +168,25 @@ const concurrentRequests = {};
 
 /**
  * Share concurrent requests/responses for the same resource.
- * @param {string} cacheKey 
+ * @param {string} cacheKey
  * @param {()=>Promise<Response>} next
  * @returns {Promise<Response>}
  */
 async function checkConcurrent(cacheKey, next) {
+  // If there is already the same request active, reuse it.
   let current = concurrentRequests[cacheKey];
-  if (!current) {
-    current = next();
-    concurrentRequests[cacheKey] = current;
-    setTimeout(() => {
-      if (concurrentRequests[cacheKey] === current) {
-        delete concurrentRequests[cacheKey];
-      }
-    }, 1000).unref();
-    return current;
-  }
+  if (current) return current;
+
+  // Otherwise, make a new request.
+  current = next();
+
+  // Mark this request as current for the next 1000ms.
+  concurrentRequests[cacheKey] = current;
+  setTimeout(() => {
+    if (concurrentRequests[cacheKey] !== current) return;
+    delete concurrentRequests[cacheKey];
+  }, 1000).unref();
+
   return current;
 }
 
@@ -191,7 +194,7 @@ async function checkConcurrent(cacheKey, next) {
  * Perform an HTTP Request
  * @param {Request} req
  * @param {number} redirected
- * @returns {Response}
+ * @returns {Promise<Response>}
  */
 async function httpRequest(req, redirected = 0) {
   // For non GET requests, skip all connection pooling and caching logic.
@@ -222,7 +225,7 @@ async function httpRequest(req, redirected = 0) {
         if (!allowStale) {
           const now = Date.now();
           const age = metaBody.stat.mtime - now;
-          // console.log("TODO: is stale?", metaPath, age, meta);
+          // TODO: Implement robust freshness algorithm.  For now, we assume stale to be safe.
           fresh = false;
         }
 
@@ -276,6 +279,12 @@ async function httpRequest(req, redirected = 0) {
   });
 }
 
+/**
+ *
+ * @param {Request} req
+ * @param {number} redirected
+ * @returns {Promise<Response>}
+ */
 async function realHttpRequest(req, redirected = 0) {
   const { protocol, host, port, hostname, pathname } = req.meta;
 
@@ -303,8 +312,6 @@ async function realHttpRequest(req, redirected = 0) {
     // Tell non GET requests that there is no body expected if there was none.
     req.headers.set('Content-Length', '0');
   }
-
-  // console.log(req);
 
   let headers = [];
   for (let [key, value] of req.headers) {
@@ -351,9 +358,6 @@ async function realHttpRequest(req, redirected = 0) {
     redirected: !!redirected
   });
 
-  // console.log(res);
-
-
   if (res.status >= 300 && res.status < 400 && res.headers.Location) {
     if (req.redirect === 'follow') {
       if (req.method === 'GET') {
@@ -373,14 +377,12 @@ async function realHttpRequest(req, redirected = 0) {
   return res;
 }
 
-
 /**
  * Load a local file as if it was an HTTP request.
  * @param {Request} req
- * @returns {Response}
+ * @returns {Promise<Response>}
  */
 async function fileRequest(req) {
-  // console.log("FILE REQUEST", req)
   let { meta: { path }, method, body } = req;
   if (method === 'GET') {
     let body = await readFileStream(path).catch(err => {
