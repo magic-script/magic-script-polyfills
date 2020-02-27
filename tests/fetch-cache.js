@@ -19,15 +19,8 @@ async function main(name) {
     await fetch('https://creationix.com/content/images/2016/11/IMG_20161115_073457.jpg').then(logRes);
 
     const res = await fetch('https://lit.luvit.io/').then(logRes);
-    // console.log(i, res);
-    // return res.cachePath;
-    // console.log(name, { arrayBuffer: await res.arrayBuffer() });
-    // console.log(name, { text: await res.text() });
-    // console.log(name, { json: await res.json() });
     const data = await res.json();
     const authors = await fetch(data.authors).then(logRes).then(res => res.json());
-    return authors;
-    // console.log(authors);
     return Promise.all(
         Object.keys(authors).map(async (name) => [
             name,
