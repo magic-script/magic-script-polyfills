@@ -5,6 +5,7 @@ import { fetch } from '../src/fetch.js';
 // Enable filesystem persistence.
 setPath('.');
 
+const extra = true;
 
 async function main(name) {
 
@@ -13,18 +14,21 @@ async function main(name) {
         return res;
     }
 
-    await fetch('https://creationix.github.io/minecss').then(logRes);
-    await fetch('http://luvit.io/logo-white.svg').then(logRes);
-    await fetch('https://creationix.com/content/images/2016/11/Logo_V2.png').then(logRes);
-    await fetch('https://creationix.com/content/images/2016/11/IMG_20161115_073457.jpg').then(logRes);
+    await Promise.all([
+        fetch('https://creationix.github.io/minecss').then(logRes),
+        fetch('http://luvit.io/logo-white.svg').then(logRes),
+        fetch('https://creationix.com/content/images/2016/11/Logo_V2.png').then(logRes),
+        fetch('https://creationix.com/content/images/2016/11/IMG_20161115_073457.jpg').then(logRes)
+    ]);
 
     const res = await fetch('https://lit.luvit.io/').then(logRes);
     const data = await res.json();
     const authors = await fetch(data.authors).then(logRes).then(res => res.json());
+    if (!extra) return authors;
     return Promise.all(
         Object.keys(authors).map(async (name) => [
             name,
-            await fetch(authors[name]).then(res => res.json())
+            await fetch(authors[name]).then(logRes).then(res => res.json())
         ])
     );
 }
