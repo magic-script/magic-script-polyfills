@@ -9,6 +9,7 @@ import { Headers } from './headers.js';
 import { resolveUrl } from './resolve.js';
 import { consume, binToStr } from './utils.js';
 import { mkdirSync } from "./fs-uv.js";
+import { sha1 } from "./sha1.js";
 
 export { Headers };
 
@@ -191,6 +192,15 @@ async function checkConcurrent(cacheKey, next) {
 }
 
 /**
+ * @param  {string[]} args
+ * @returns string
+ */
+function hashKey(...args) {
+  const extension = args[args.length - 1].match(/\.([^.]{1,6})$/);
+  return sha1(args.join(':')) + (extension ? `.${extension[1]}` : '');
+}
+
+/**
  * Perform an HTTP Request
  * @param {Request} req
  * @param {number} redirected
@@ -203,7 +213,7 @@ async function httpRequest(req, redirected = 0) {
   }
 
   const { protocol, host, port, pathname } = req.meta;
-  const cacheKey = `${fetch.cacheBase}/${protocol}_${host}_${port}${pathname.replace(/_/g, '__').replace(/\//g, '_')}`;
+  const cacheKey = `${fetch.cacheBase}/${hashKey(protocol, host, port, pathname)}`;
 
   // Combine concurrent requests for the same resource.
   return checkConcurrent(cacheKey, async () => {
