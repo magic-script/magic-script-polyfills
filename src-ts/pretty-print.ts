@@ -193,8 +193,12 @@ export function prettyPrint(val: any, depthLeft = 2, indent = 0): string {
             let special = "";
             let isJSON = false;
             if (typeof val.toJSON === "function") {
-                val = val.toJSON();
-                isJSON = true;
+                try {
+                    val = val.toJSON();
+                    isJSON = true;
+                } catch (err) {
+                    // Ignore failed .toJSON calls
+                }
             }
             const isArray = Array.isArray(val) || ArrayBuffer.isView(val) && typeof (val as any).length === "number";
             let name = "";
