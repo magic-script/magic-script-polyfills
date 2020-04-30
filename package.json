@@ -1,12 +1,12 @@
 {
   "name": "magic-script-polyfills",
-  "version": "2.10.1",
+  "version": "2.10.2",
   "description": "Polyfills to give browser and/or node apis in magicscript",
   "module": "src/polyfills.js",
   "dependencies": {},
   "devDependencies": {
-    "magic-script-typings": "^1.6.2",
-    "typescript": "^3.7.3"
+    "magic-script-typings": "^1.7.1",
+    "typescript": "^3.8.3"
   },
   "scripts": {
     "build": "rollup -c",
