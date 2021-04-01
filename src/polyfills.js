@@ -21,7 +21,7 @@ import {
   WebSocket,
   XMLHttpRequest,
 } from './index.js';
-import { on as onWritablePath } from "./writable-path.js";
+import { on as onWritablePath } from './writable-path.js';
 
 // Browser globals
 globalThis.clearImmediate = clearImmediate;
@@ -30,7 +30,8 @@ globalThis.clearTimeout = clearTimeout;
 globalThis.crypto = crypto;
 globalThis.fetch = fetch;
 globalThis.Headers = Headers;
-globalThis.localStorage = new Storage();
+globalThis.localStorage = new Storage('storage');
+globalThis.sessionStorage = new Storage();
 globalThis.Request = Request;
 globalThis.Response = Response;
 globalThis.setImmediate = setImmediate;
@@ -46,6 +47,6 @@ globalThis.global = globalThis;
 globalThis.process = process;
 
 onWritablePath((newPath) => {
-  globalThis.localStorage.updateBase(pathJoin(newPath, 'localstorage'));
+  globalThis.localStorage = new Storage(pathJoin(newPath, 'localstorage'));
   fetch.setCacheFolder(pathJoin(newPath, 'fetchcache'));
-})
+});

@@ -1,6 +1,4 @@
-import { mkdirSync } from "./fs-uv.js";
-import { readFileSync, writeFileSync, readdirSync, unlinkSync } from "./node/fs.js";
-import { pathJoin } from "./utils2.js";
+import { readFileSync, writeFileSync, unlinkSync } from "./node/fs.js";
 
 export class Storage {
     private base: string;
@@ -10,68 +8,65 @@ export class Storage {
         this.updateBase(basePath);
     }
 
+    public get length() {
+        return this.data.size;
+    }
+
+    public key(index: number) {
+        let keys = this.data.keys();
+        if (index < this.data.size && index >= 0) {
+            let myIndex = 0;
+            while (true) {
+                let key = keys.next();
+                if ((key.value === undefined && !key.done) || myIndex > this.data.size) {
+                    return null;
+                }
+                if (myIndex++ === index) {
+                    return key.value;
+                }
+            }
+        }
+        return null;
+    }
+
     public updateBase(basePath?: string) {
         if (!basePath) {
             this.data = new Map();
             this.base = undefined;
         } else {
-            try {
-                mkdirSync(basePath, 0o700);
-            } catch (err) {
-                if (!/^EEXIST/.test(err.message)) { throw err; }
-            }
-            this.data = undefined;
+            let fileData = JSON.parse(readFileSync(basePath, "utf-8"));
+            this.data = new Map(Object.entries(fileData));
             this.base = basePath;
         }
     }
 
     public setItem(name: string, value: string) {
+        this.data.set(String(name), String(value));
         if (this.base) {
-            writeFileSync(pathJoin(this.base, String(name)), String(value));
-        } else {
-            this.data.set(String(name), String(value));
+            writeFileSync(this.base, JSON.stringify(Object.fromEntries(this.data)));
         }
     }
 
     public getItem(name: string): string | null {
-        if (this.base) {
-            try {
-                return readFileSync(pathJoin(this.base, String(name)), 'utf8');
-            }
-            catch (err) {
-                if (!/^ENOENT/.test(err.message)) { throw err; }
-                return null;
-            }
-        } else {
-            const stringKey = String(name);
-            if (this.data.has(stringKey)) {
-                return String(this.data.get(stringKey));
-            }
-            return null;
+        const stringKey = String(name);
+        if (this.data.has(stringKey)) {
+            return String(this.data.get(stringKey));
         }
+        return null;
     }
 
     public removeItem(name: string) {
+        const stringKey = String(name);
+        this.data.delete(stringKey);
         if (this.base) {
-            try {
-                unlinkSync(pathJoin(this.base, String(name)));
-            } catch (err) {
-                if (!/^ENOENT/.test(err.message)) { throw err; }
-            }
-        } else {
-            const stringKey = String(name);
-            this.data.delete(stringKey);
-
+            writeFileSync(this.base, JSON.stringify(Object.fromEntries(this.data)));
         }
     }
 
     public clear(): void {
+        this.data.clear();
         if (this.base) {
-            for (const name of readdirSync(this.base)) {
-                unlinkSync(pathJoin(this.base, name));
-            }
-        } else {
-            this.data.clear();
+            unlinkSync(this.base);
         }
     }
 
