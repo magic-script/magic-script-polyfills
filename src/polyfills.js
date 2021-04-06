@@ -30,7 +30,6 @@ globalThis.clearTimeout = clearTimeout;
 globalThis.crypto = crypto;
 globalThis.fetch = fetch;
 globalThis.Headers = Headers;
-globalThis.localStorage = new Storage('storage');
 globalThis.sessionStorage = new Storage();
 globalThis.Request = Request;
 globalThis.Response = Response;
