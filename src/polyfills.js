@@ -21,7 +21,7 @@ import {
   WebSocket,
   XMLHttpRequest,
 } from './index.js';
-import { on as onWritablePath } from './writable-path.js';
+import { on as onWritablePath, setPath } from './writable-path.js';
 
 // Browser globals
 globalThis.clearImmediate = clearImmediate;
@@ -40,6 +40,7 @@ globalThis.TextEncoder = TextEncoder;
 globalThis.WebSocket = WebSocket;
 globalThis.window = globalThis;
 globalThis.XMLHttpRequest = XMLHttpRequest;
+globalThis.setWritablePath = setPath;
 
 // node.js globals
 globalThis.global = globalThis;
